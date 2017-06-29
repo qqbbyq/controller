@@ -65,6 +65,7 @@ import org.opendaylight.controller.cluster.raft.messages.AppendEntriesReply;
 import org.opendaylight.controller.cluster.raft.messages.ServerRemoved;
 import org.opendaylight.controller.cluster.raft.protobuff.client.messages.Payload;
 import org.opendaylight.yangtools.concepts.Identifier;
+import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidateTip;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.DataValidationFailedException;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.TipProducingDataTree;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.TreeType;
@@ -244,8 +245,10 @@ public class Shard extends RaftActor {
             } else if (message instanceof ForwardedReadyTransaction) {
                 handleForwardedReadyTransaction((ForwardedReadyTransaction) message);
             } else if (message instanceof ReadyLocalTransaction) {
+                //在这里cache里一个cortEntry，里面包含有DataCandidate
                 handleReadyLocalTransaction((ReadyLocalTransaction)message);
             } else if (CanCommitTransaction.isSerializedType(message)) {
+                //在这里检查canCommit，若是doImmediateCommit，则直接dommit(preCommit)，否则preCommit在下步执行
                 handleCanCommitTransaction(CanCommitTransaction.fromSerializable(message));
             } else if (CommitTransaction.isSerializedType(message)) {
                 //handleCommitTransaction时最后触动了notifyListeners
@@ -287,6 +290,10 @@ public class Shard extends RaftActor {
             } else if (message instanceof DataTreeCohortActorRegistry.CohortRegistryCommand) {
                 store.processCohortRegistryCommand(getSender(),
                         (DataTreeCohortActorRegistry.CohortRegistryCommand) message);
+            }
+            //added by zhuyuqing
+            else if(message instanceof DataTreeCandidateTip){
+                store.notifyListeners((DataTreeCandidateTip) message);
             } else {
                 super.handleNonRaftCommand(message);
             }
