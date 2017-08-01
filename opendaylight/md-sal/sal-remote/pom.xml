@@ -42,11 +42,11 @@
               <yangFilesRootDir>src/main/yang</yangFilesRootDir>
               <codeGenerators>
                 <generator>
-                  <codeGeneratorClass>org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl</codeGeneratorClass>
+                  <codeGeneratorClass>org.opendaylight.org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl</codeGeneratorClass>
                   <outputBaseDir>${salGeneratorPath}</outputBaseDir>
                 </generator>
                 <generator>
-                  <codeGeneratorClass>org.opendaylight.yangtools.yang.unified.doc.generator.maven.DocumentationGeneratorImpl</codeGeneratorClass>
+                  <codeGeneratorClass>org.opendaylight.org.opendaylight.yangtools.yang.unified.doc.generator.maven.DocumentationGeneratorImpl</codeGeneratorClass>
                   <outputBaseDir>target/site/models</outputBaseDir>
                 </generator>
               </codeGenerators>
