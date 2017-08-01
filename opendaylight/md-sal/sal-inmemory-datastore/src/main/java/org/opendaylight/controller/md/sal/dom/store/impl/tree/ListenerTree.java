@@ -21,7 +21,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
  *
  * @author Robert Varga
  */
-//监听树
 public final class ListenerTree extends AbstractRegistrationTree<DataChangeListenerRegistration<?>> {
     private ListenerTree() {
         // Private to disallow direct instantiation
@@ -32,7 +31,6 @@ public final class ListenerTree extends AbstractRegistrationTree<DataChangeListe
      *
      * @return An empty instance.
      */
-    //创建一个空树
     public static ListenerTree create() {
         return new ListenerTree();
     }
@@ -45,9 +43,7 @@ public final class ListenerTree extends AbstractRegistrationTree<DataChangeListe
      * @param scope Scope of triggering event.
      * @return Listener registration
      */
-    //注册的时候多了一个scope的参数
-    public <L extends AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>>>
-        DataChangeListenerRegistration<L> registerDataChangeListener(final YangInstanceIdentifier path,
+    public <L extends AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>>> DataChangeListenerRegistration<L> registerDataChangeListener(final YangInstanceIdentifier path,
             final L listener, final DataChangeScope scope) {
 
         // Take the write lock

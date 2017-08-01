@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 
 /**
  * Coordinates commits for a shard ensuring only one concurrent 3-phase commit.
- * 保证只有一个并发的3次提交
+ *
  * @author Thomas Pantelis
  */
 final class ShardCommitCoordinator {
@@ -320,7 +320,8 @@ final class ShardCommitCoordinator {
                 log.debug("{}: Transaction {} committed as {}, sending response to {}", persistenceId(), txId, result,
                     sender);
 
-                cohortCache.remove(cohortEntry.getTransactionID());
+                //tmp removed by zhuyuqing: need to be recover
+//                cohortCache.remove(cohortEntry.getTransactionID());
                 sender.tell(CommitTransactionReply.instance(cohortEntry.getClientVersion()).toSerializable(),
                     cohortEntry.getShard().self());
             }

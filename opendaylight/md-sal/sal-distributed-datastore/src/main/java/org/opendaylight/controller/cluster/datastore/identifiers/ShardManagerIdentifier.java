@@ -8,7 +8,6 @@
 
 package org.opendaylight.controller.cluster.datastore.identifiers;
 
-//用type字段唯一标示ShardManager的name:shardmanager-${type}
 public class ShardManagerIdentifier {
     private final String type;
 

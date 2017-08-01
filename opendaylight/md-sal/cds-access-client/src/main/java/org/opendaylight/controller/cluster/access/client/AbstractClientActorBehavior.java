@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
  *
  * @author Robert Varga
  */
-@Beta//抽象的AbstractcLIENTactorBehavior,声明handlingRecover和handlingCommand两个方法
+@Beta
 public abstract class AbstractClientActorBehavior<C extends AbstractClientActorContext> {
     private final C context;
 

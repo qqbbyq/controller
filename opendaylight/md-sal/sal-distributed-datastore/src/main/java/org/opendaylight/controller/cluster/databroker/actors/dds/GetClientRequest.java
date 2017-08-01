@@ -15,7 +15,6 @@ import com.google.common.base.Preconditions;
  *
  * @author Robert Varga
  */
-//请求的类型，回复一个DistributedDataStoreClient，
 final class GetClientRequest {
     private final ActorRef replyTo;
 

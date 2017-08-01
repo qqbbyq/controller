@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * @deprecated This is a deprecated placeholder to keep its inner class present. It serves no other purpose.
  */
-@Deprecated//已被重写，放弃不再使用
+@Deprecated
 public final class ShardManager {
     /**
      * We no longer persist SchemaContextModules but keep this class around for now for backwards

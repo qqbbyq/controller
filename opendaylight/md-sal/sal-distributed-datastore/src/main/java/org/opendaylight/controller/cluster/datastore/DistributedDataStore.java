@@ -76,8 +76,6 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
 
     private final TransactionContextFactory txContextFactory;
 
-    //构造函数
-    //TODO cluster？？
     public DistributedDataStore(final ActorSystem actorSystem, final ClusterWrapper cluster,
             final Configuration configuration, final DatastoreContextFactory datastoreContextFactory,
             final DatastoreSnapshot restoreFromSnapshot) {
@@ -86,37 +84,26 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
         Preconditions.checkNotNull(configuration, "configuration should not be null");
         Preconditions.checkNotNull(datastoreContextFactory, "datastoreContextFactory should not be null");
 
-        //取出配置项中的dataStoreName唯一标示shardManager，shardManager-$datastorename，
         String shardManagerId = ShardManagerIdentifier.builder()
                 .type(datastoreContextFactory.getBaseDatastoreContext().getDataStoreName()).build().toString();
 
         LOG.info("Creating ShardManager : {}", shardManagerId);
 
-        //获取Shard相关的调度器
         String shardDispatcher =
                 new Dispatchers(actorSystem.dispatchers()).getDispatcherPath(Dispatchers.DispatcherType.Shard);
 
-        //初始化ShardInfo的Cache
         PrimaryShardInfoFutureCache primaryShardInfoCache = new PrimaryShardInfoFutureCache();
 
-        //新建creator包含cluster等参数，
-        ShardManagerCreator creator = new ShardManagerCreator().
-                cluster(cluster).configuration(configuration).
-                datastoreContextFactory(datastoreContextFactory).
-                waitTillReadyCountdownLatch(waitTillReadyCountDownLatch).
-                primaryShardInfoCache(primaryShardInfoCache).
-                restoreFromSnapshot(restoreFromSnapshot);
+        ShardManagerCreator creator = new ShardManagerCreator().cluster(cluster).configuration(configuration).
+                datastoreContextFactory(datastoreContextFactory).waitTillReadyCountdownLatch(waitTillReadyCountDownLatch).
+                primaryShardInfoCache(primaryShardInfoCache).restoreFromSnapshot(restoreFromSnapshot);
 
-        //createShardManager实际创建了ManagerActor并传入actorContext
         actorContext = new ActorContext(actorSystem, createShardManager(actorSystem, creator, shardDispatcher,
                 shardManagerId), cluster, configuration, datastoreContextFactory.getBaseDatastoreContext(), primaryShardInfoCache);
 
-        //新建DistributedDataStoreClientActor
         final Props clientProps = DistributedDataStoreClientActor.props(cluster.getCurrentMemberName(),
             datastoreContextFactory.getBaseDatastoreContext().getDataStoreName(), actorContext);
         final ActorRef clientActor = actorSystem.actorOf(clientProps);
-
-        //向clientActor请求GET_CLIENT_FACTORY，获取client
         try {
             client = DistributedDataStoreClientActor.getDistributedDataStoreClient(clientActor, 30, TimeUnit.SECONDS);
         } catch (Exception e) {
@@ -128,7 +115,6 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
         identifier = client.getIdentifier();
         LOG.debug("Distributed data store client {} started", identifier);
 
-        //获取shardLeader选举超时时间*3
         this.waitTillReadyTimeInMillis =
                 actorContext.getDatastoreContext().getShardLeaderElectionTimeout().duration().toMillis() * READY_WAIT_FACTOR;
 
@@ -137,11 +123,11 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
         datastoreConfigMXBean = new DatastoreConfigurationMXBeanImpl(
                 datastoreContextFactory.getBaseDatastoreContext().getDataStoreMXBeanType());
         datastoreConfigMXBean.setContext(datastoreContextFactory.getBaseDatastoreContext());
-        datastoreConfigMXBean.registerMBean();//向MBean平台注册DataStoreConfig
+        datastoreConfigMXBean.registerMBean();
 
         datastoreInfoMXBean = new DatastoreInfoMXBeanImpl(datastoreContextFactory.getBaseDatastoreContext().
                 getDataStoreMXBeanType(), actorContext);
-        datastoreInfoMXBean.registerMBean();//向MBean平台注册DataStoreInfo
+        datastoreInfoMXBean.registerMBean();
     }
 
     @VisibleForTesting
@@ -159,19 +145,17 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
     }
 
     @SuppressWarnings("unchecked")
-    @Override//实现 -> DistributedDataStoreInterface -> DOMStore
+    @Override
     public <L extends AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>>>
                                               ListenerRegistration<L> registerChangeListener(
         final YangInstanceIdentifier path, final L listener,
         final AsyncDataBroker.DataChangeScope scope) {
-        //scope分三种，one(仅一个),substree（子树和节点）和base（孩子和节点）
 
         Preconditions.checkNotNull(path, "path should not be null");
         Preconditions.checkNotNull(listener, "listener should not be null");
 
         LOG.debug("Registering listener: {} for path: {} scope: {}", listener, path, scope);
 
-        //ShardStrategy有两种实现，分别对应module和default两种形式，ModuleShardStrategy和DefaultShardStrategy
         String shardName = actorContext.getShardStrategyFactory().getStrategy(path).findShard(path);
 
         final DataChangeListenerRegistrationProxy listenerRegistrationProxy =
@@ -181,9 +165,8 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
         return listenerRegistrationProxy;
     }
 
-    @Override//完全连起来了，cool
-    public <L extends DOMDataTreeChangeListener> ListenerRegistration<L> registerTreeChangeListener
-      (final YangInstanceIdentifier treeId, final L listener) {
+    @Override
+    public <L extends DOMDataTreeChangeListener> ListenerRegistration<L> registerTreeChangeListener(final YangInstanceIdentifier treeId, final L listener) {
         Preconditions.checkNotNull(treeId, "treeId should not be null");
         Preconditions.checkNotNull(listener, "listener should not be null");
 
@@ -295,7 +278,6 @@ public class DistributedDataStore implements DistributedDataStoreInterface, Sche
         }
     }
 
-    //创建ShardManager,若失败，则重试100次
     private static ActorRef createShardManager(final ActorSystem actorSystem, final ShardManagerCreator creator,
             final String shardDispatcher, final String shardManagerId) {
         Exception lastException = null;

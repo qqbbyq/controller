@@ -24,7 +24,6 @@ import org.opendaylight.yangtools.concepts.WritableIdentifier;
  * @author Robert Varga
  */
 @Beta
-//前台唯一标示符，曾用来标示DistributedDataStoreClientActor
 public final class FrontendIdentifier implements WritableIdentifier {
     private static final class Proxy implements Externalizable {
         private static final long serialVersionUID = 1L;
@@ -66,7 +65,6 @@ public final class FrontendIdentifier implements WritableIdentifier {
         this.memberName = Preconditions.checkNotNull(memberName);
     }
 
-    //使用节点名和clientType生成唯一标示，这里的clientType曾使用datastore-name
     public static FrontendIdentifier create(final MemberName memberName, final FrontendType clientType) {
         return new FrontendIdentifier(memberName, clientType);
     }

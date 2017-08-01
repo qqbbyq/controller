@@ -20,7 +20,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
  * encapsulates received notifications into a {@link DataTreeChanged}
  * message and forwards them towards the client's {@link DataTreeChangeListenerActor}.
  */
-//内部实现了DOMDataTreeChangeListener并转发消息给客户端的DataTreeCHangeListenerActor
 final class ForwardingDataTreeChangeListener implements DOMDataTreeChangeListener {
     private final ActorSelection actor;
 

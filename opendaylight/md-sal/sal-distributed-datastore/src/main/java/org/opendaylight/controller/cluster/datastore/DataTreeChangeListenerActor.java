@@ -22,23 +22,19 @@ import org.slf4j.LoggerFactory;
  * Proxy actor which acts as a facade to the user-provided listener. Responsible for decapsulating
  * DataTreeChanged messages and dispatching their context to the user.
  */
-//DataTreeChangeListener作为向用户传递Changed消息的对外窗口存在,
-// 谁往这里发送了DataTreeChanged的消息？？？猜测是ForwardingDataTreeChangeListener??TODO
-// 回复了一个DataTreeChangedReply
 final class DataTreeChangeListenerActor extends AbstractUntypedActor {
     private static final Logger LOG = LoggerFactory.getLogger(DataTreeChangeListenerActor.class);
     private final DOMDataTreeChangeListener listener;
     private final YangInstanceIdentifier registeredPath;
     private boolean notificationsEnabled = false;
 
-    //按理说这里的listener就是用户的listener了吧,Proxy里传入的listener TODO: not sure
     private DataTreeChangeListenerActor(final DOMDataTreeChangeListener listener,
             final YangInstanceIdentifier registeredPath) {
         this.listener = Preconditions.checkNotNull(listener);
         this.registeredPath = Preconditions.checkNotNull(registeredPath);
     }
 
-    @Override //只有enable了notification之后才会处理dataChanged messages
+    @Override
     protected void handleReceive(final Object message) {
         if (message instanceof DataTreeChanged) {
             dataChanged((DataTreeChanged)message);
@@ -58,7 +54,7 @@ final class DataTreeChangeListenerActor extends AbstractUntypedActor {
 
         LOG.debug("Sending change notification {} to listener {}", message.getChanges(), listener);
 
-        try {//调用用户端listener接口的onDataChangedxxxx
+        try {
             this.listener.onDataTreeChanged(message.getChanges());
         } catch (Exception e) {
             LOG.error("Error notifying listener {}", this.listener, e);

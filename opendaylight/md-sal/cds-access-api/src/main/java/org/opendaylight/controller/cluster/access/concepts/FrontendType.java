@@ -31,7 +31,6 @@ import org.opendaylight.yangtools.concepts.WritableIdentifier;
  *
  * @author Robert Varga
  */
-//用于标示一个成员节点上多个客户端的辨识器
 @Beta
 public final class FrontendType implements Comparable<FrontendType>, WritableIdentifier {
     private static final class Proxy implements Externalizable {

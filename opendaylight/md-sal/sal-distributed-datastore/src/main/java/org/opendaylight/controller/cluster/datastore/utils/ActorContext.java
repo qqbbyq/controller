@@ -265,7 +265,7 @@ public class ActorContext {
      * ActorRef.
      *
      * @param shardName the name of the local shard that needs to be found
-     *///寻找当地的localShard并且等待其初始化完成，
+     */
     public Future<ActorRef> findLocalShardAsync( final String shardName) {
         Future<Object> future = executeOperationAsync(shardManager,
                 new FindLocalShard(shardName, true), shardInitializationTimeout);

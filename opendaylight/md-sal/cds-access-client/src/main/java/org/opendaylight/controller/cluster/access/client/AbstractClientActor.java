@@ -21,8 +21,6 @@ import org.slf4j.LoggerFactory;
  * @author Robert Varga
  */
 @Beta
-
-//抽象的abstractClientActor,
 public abstract class AbstractClientActor extends UntypedPersistentActor {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractClientActor.class);
     private AbstractClientActorBehavior<?> currentBehavior;
@@ -37,7 +35,6 @@ public abstract class AbstractClientActor extends UntypedPersistentActor {
         return currentBehavior.persistenceId();
     }
 
-    //behavior更替到next
     private void switchBehavior(final AbstractClientActorBehavior<?> nextBehavior) {
         if (!currentBehavior.equals(nextBehavior)) {
             if (nextBehavior == null) {
@@ -70,6 +67,5 @@ public abstract class AbstractClientActor extends UntypedPersistentActor {
         switchBehavior(currentBehavior.onReceiveRecover(recover));
     }
 
-    //定义一个抽象的initialBehavior，在本类未被调用
     protected abstract ClientActorBehavior initialBehavior(ClientActorContext context);
 }

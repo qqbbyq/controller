@@ -91,10 +91,8 @@ public class DataChangeListenerRegistrationProxy implements ListenerRegistration
         }
     }
 
-
     public void init(final YangInstanceIdentifier path, final AsyncDataBroker.DataChangeScope scope) {
-        //只是将DataTreeChangeListenerProxy的构造函数方法中，
-        // dataChangeListenerActor的创建移个位置而已
+
         dataChangeListenerActor = actorContext.getActorSystem().actorOf(
                 DataChangeListener.props(listener, path).withDispatcher(actorContext.getNotificationDispatcherPath()));
 
@@ -114,15 +112,14 @@ public class DataChangeListenerRegistrationProxy implements ListenerRegistration
             }
         }, actorContext.getClientDispatcher());
     }
-    //DataTreeChangeListenerProxy的这个方法，只有一个shard参数
+
     private void doRegistration(ActorRef shard, final YangInstanceIdentifier path,
             DataChangeScope scope) {
 
         Future<Object> future = actorContext.executeOperationAsync(shard,
                 new RegisterChangeListener(path, dataChangeListenerActor, scope,
                     listener instanceof ClusteredDOMDataChangeListener),
-          //boolean类型，每次都容易混淆
-          actorContext.getDatastoreContext().getShardInitializationTimeout());
+                actorContext.getDatastoreContext().getShardInitializationTimeout());
 
         future.onComplete(new OnComplete<Object>(){
             @Override

@@ -18,7 +18,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
  *
  * @author Thomas Pantelis
  */
-//DataChangeListener的接口，生成并发布通知
 interface ShardDataChangeListenerPublisher extends ShardDataTreeNotificationPublisher {
     ShardDataChangeListenerPublisher newInstance();
 

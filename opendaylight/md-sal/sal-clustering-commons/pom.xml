@@ -5,9 +5,8 @@
   <parent>
     <groupId>org.opendaylight.controller</groupId>
     <artifactId>sal-parent</artifactId>
-    <version>1.4.3-Boron-SR3</version>
+    <version>1.4.4-Boron-SR4</version>
   </parent>
-
 
   <artifactId>sal-clustering-commons</artifactId>
   <packaging>bundle</packaging>

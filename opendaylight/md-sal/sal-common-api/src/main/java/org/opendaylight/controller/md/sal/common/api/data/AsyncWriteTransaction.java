@@ -216,14 +216,14 @@ public interface AsyncWriteTransaction<P extends Path<P>, D> extends AsyncTransa
      *
      * <table>
      * <tr><th>Initial state</th><th>Tx 1</th><th>Tx 2</th><th>Result</th></tr>
-     * <tr><td>Empty</td><td>put(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, state is A=1</td></tr> done
-     * <tr><td>Empty</td><td>put(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr> done
+     * <tr><td>Empty</td><td>put(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, state is A=1</td></tr>
+     * <tr><td>Empty</td><td>put(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr>
      *
-     * <tr><td>Empty</td><td>merge(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, state is A=1</td></tr> done
-     * <tr><td>Empty</td><td>merge(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr> done
+     * <tr><td>Empty</td><td>merge(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, state is A=1</td></tr>
+     * <tr><td>Empty</td><td>merge(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr>
      *
      *
-     * <tr><td>A=0</td><td>put(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, A=1</td></tr> why
+     * <tr><td>A=0</td><td>put(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, A=1</td></tr>
      * <tr><td>A=0</td><td>put(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr>
      * <tr><td>A=0</td><td>merge(A,1)</td><td>put(A,2)</td><td>Tx 2 will fail, A=1</td></tr>
      * <tr><td>A=0</td><td>merge(A,1)</td><td>merge(A,2)</td><td>A=2</td></tr>

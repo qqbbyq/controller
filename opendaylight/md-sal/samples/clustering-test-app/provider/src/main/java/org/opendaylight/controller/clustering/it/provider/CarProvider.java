@@ -63,9 +63,7 @@ public class CarProvider implements CarService {
     private static final Logger LOG = LoggerFactory.getLogger(CarProvider.class);
 
     private static final String ENTITY_TYPE = "cars";
-    //一个identifier包括pathBuilder:List<PathArgument>
     private static final InstanceIdentifier CARS_IID = InstanceIdentifier.builder(Cars.class).build();
-    //包含一个InstanceIdentifier的基础上，还多了一个datastore type
     private static final DataTreeIdentifier<Cars> CARS_DTID = new DataTreeIdentifier<>(
             LogicalDatastoreType.CONFIGURATION, CARS_IID);
 
@@ -78,10 +76,8 @@ public class CarProvider implements CarService {
     private final CarEntityOwnershipListener ownershipListener = new CarEntityOwnershipListener();
     private final AtomicBoolean registeredListener = new AtomicBoolean();
 
-    //DataChangeListener的registration
     private final Collection<ListenerRegistration<DataChangeListener>> carsDclRegistrations =
             Sets.newConcurrentHashSet();
-    //DataTreeChangeListener的registraction
     private final Collection<ListenerRegistration<CarDataTreeChangeListener>> carsDtclRegistrations =
             Sets.newConcurrentHashSet();
 

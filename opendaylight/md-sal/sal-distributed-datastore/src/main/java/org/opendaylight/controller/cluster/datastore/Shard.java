@@ -12,17 +12,14 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.Cancellable;
 import akka.actor.Props;
+import akka.cluster.pubsub.CandidateWrapper;
+import akka.cluster.pubsub.DistributedPubSubMediator;
+import akka.cluster.pubsub.ModifiedDistributedPubSub;
 import akka.serialization.Serialization;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Ticker;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import javax.annotation.Nonnull;
 import org.opendaylight.controller.cluster.access.concepts.TransactionIdentifier;
 import org.opendaylight.controller.cluster.common.actor.CommonConfig;
 import org.opendaylight.controller.cluster.common.actor.MessageTracker;
@@ -32,25 +29,8 @@ import org.opendaylight.controller.cluster.datastore.exceptions.NoShardLeaderExc
 import org.opendaylight.controller.cluster.datastore.identifiers.ShardIdentifier;
 import org.opendaylight.controller.cluster.datastore.jmx.mbeans.shard.ShardMBeanFactory;
 import org.opendaylight.controller.cluster.datastore.jmx.mbeans.shard.ShardStats;
-import org.opendaylight.controller.cluster.datastore.messages.AbortTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.ActorInitialized;
-import org.opendaylight.controller.cluster.datastore.messages.BatchedModifications;
-import org.opendaylight.controller.cluster.datastore.messages.CanCommitTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.CloseTransactionChain;
-import org.opendaylight.controller.cluster.datastore.messages.CommitTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.CreateTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.CreateTransactionReply;
-import org.opendaylight.controller.cluster.datastore.messages.DatastoreSnapshot;
+import org.opendaylight.controller.cluster.datastore.messages.*;
 import org.opendaylight.controller.cluster.datastore.messages.DatastoreSnapshot.ShardSnapshot;
-import org.opendaylight.controller.cluster.datastore.messages.ForwardedReadyTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.GetShardDataTree;
-import org.opendaylight.controller.cluster.datastore.messages.OnDemandShardState;
-import org.opendaylight.controller.cluster.datastore.messages.PeerAddressResolved;
-import org.opendaylight.controller.cluster.datastore.messages.ReadyLocalTransaction;
-import org.opendaylight.controller.cluster.datastore.messages.RegisterChangeListener;
-import org.opendaylight.controller.cluster.datastore.messages.RegisterDataTreeChangeListener;
-import org.opendaylight.controller.cluster.datastore.messages.ShardLeaderStateChanged;
-import org.opendaylight.controller.cluster.datastore.messages.UpdateSchemaContext;
 import org.opendaylight.controller.cluster.datastore.utils.Dispatchers;
 import org.opendaylight.controller.cluster.notifications.LeaderStateChanged;
 import org.opendaylight.controller.cluster.notifications.RegisterRoleChangeListener;
@@ -65,12 +45,21 @@ import org.opendaylight.controller.cluster.raft.messages.AppendEntriesReply;
 import org.opendaylight.controller.cluster.raft.messages.ServerRemoved;
 import org.opendaylight.controller.cluster.raft.protobuff.client.messages.Payload;
 import org.opendaylight.yangtools.concepts.Identifier;
+import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.DataValidationFailedException;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.TipProducingDataTree;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.TreeType;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Shard represents a portion of the logical data tree <br/>
@@ -99,7 +88,7 @@ public class Shard extends RaftActor {
     // FIXME: shard names should be encapsulated in their own class and this should be exposed as a constant.
     public static final String DEFAULT_NAME = "default";
 
-    // The state of this Shard, 一个Shard维护一个ShardDataTree
+    // The state of this Shard
     private final ShardDataTree store;
 
     /// The name of this shard
@@ -109,7 +98,6 @@ public class Shard extends RaftActor {
 
     private DatastoreContext datastoreContext;
 
-    //维护了一个commit的协调者
     private final ShardCommitCoordinator commitCoordinator;
 
     private long transactionCommitTimeout;
@@ -145,19 +133,16 @@ public class Shard extends RaftActor {
         setPersistence(datastoreContext.isPersistent());
 
         LOG.info("Shard created : {}, persistent : {}", name, datastoreContext.isPersistent());
-        //一个Shard分别对应一个ShardDataTreeChangeListenerPublisher的实现类
+
         ShardDataTreeChangeListenerPublisherActorProxy treeChangeListenerPublisher =
                 new ShardDataTreeChangeListenerPublisherActorProxy(getContext(), name + "-DTCL-publisher");
-        //一个Shard分别对应一个ShardDataChangeListenerPublisher的实现类
         ShardDataChangeListenerPublisherActorProxy dataChangeListenerPublisher =
                 new ShardDataChangeListenerPublisherActorProxy(getContext(), name + "-DCL-publisher");
-
-        //对应一个ShardDataTree
         if(builder.getDataTree() != null) {
-            store = new ShardDataTree(this, builder.getSchemaContext(), builder.getDataTree(),//getDataTree
+            store = new ShardDataTree(this, builder.getSchemaContext(), builder.getDataTree(),
                     treeChangeListenerPublisher, dataChangeListenerPublisher, name);
         } else {
-            store = new ShardDataTree(this, builder.getSchemaContext(), builder.getTreeType(),//getTreeType
+            store = new ShardDataTree(this, builder.getSchemaContext(), builder.getTreeType(),
                     treeChangeListenerPublisher, dataChangeListenerPublisher, name);
         }
 
@@ -187,12 +172,22 @@ public class Shard extends RaftActor {
             this.name);
 
         messageRetrySupport = new ShardTransactionMessageRetrySupport(this);
+
+        //below is added by zhuyuqing on 2017/07/10
+        ActorRef mediator =
+          ModifiedDistributedPubSub.get(getContext().system()).mediator();
+        // register to the path
+        mediator.tell(new DistributedPubSubMediator.Subscribe(CANDIDATE_TOPIC, getSelf()), getSelf());
     }
 
     private void setTransactionCommitTimeout() {
         transactionCommitTimeout = TimeUnit.MILLISECONDS.convert(
                 datastoreContext.getShardTransactionCommitTimeoutInSeconds(), TimeUnit.SECONDS) / 2;
     }
+
+    //added by zhuyuqing
+    static String CANDIDATE_TOPIC = "candidates";
+    private DataTreeCandidate lastCandidate;
 
     private Optional<ActorRef> createRoleChangeNotifier(final String shardId) {
         ActorRef shardRoleChangeNotifier = this.getContext().actorOf(
@@ -248,17 +243,15 @@ public class Shard extends RaftActor {
             } else if (CanCommitTransaction.isSerializedType(message)) {
                 handleCanCommitTransaction(CanCommitTransaction.fromSerializable(message));
             } else if (CommitTransaction.isSerializedType(message)) {
-                //handleCommitTransaction时最后触动了notifyListeners
+                LOG.info("CANTEST: got CommitTransaction in {}", self().path().toString());
                 handleCommitTransaction(CommitTransaction.fromSerializable(message));
             } else if (AbortTransaction.isSerializedType(message)) {
                 handleAbortTransaction(AbortTransaction.fromSerializable(message));
             } else if (CloseTransactionChain.isSerializedType(message)) {
                 closeTransactionChain(CloseTransactionChain.fromSerializable(message));
             } else if (message instanceof RegisterChangeListener) {
-                //收到DataChangeListenerRegistrationProxy发送的信息
                 changeSupport.onMessage((RegisterChangeListener) message, isLeader(), hasLeader());
             } else if (message instanceof RegisterDataTreeChangeListener) {
-                //收到DataTreeChangeListenerProxy发送的Rxxx消息
                 treeChangeSupport.onMessage((RegisterDataTreeChangeListener) message, isLeader(), hasLeader());
             } else if (message instanceof UpdateSchemaContext) {
                 updateSchemaContext((UpdateSchemaContext) message);
@@ -287,7 +280,25 @@ public class Shard extends RaftActor {
             } else if (message instanceof DataTreeCohortActorRegistry.CohortRegistryCommand) {
                 store.processCohortRegistryCommand(getSender(),
                         (DataTreeCohortActorRegistry.CohortRegistryCommand) message);
-            } else {
+            } else if(message instanceof CandidateSubmit){
+                //this situation is added by zhuyuqing on 2017/7/10
+//                LOG.info("CANTEST: Shard {} got message: {} from {}, size {}", name, message, sender().path(), ((CandidateSubmit) message).getCandidates().size());
+                try{
+                    CandidateSubmit submit = (CandidateSubmit) message;
+                    sender().tell(CandidateReply.create(submit.getTransactionId()), self());
+                    List<DataTreeCandidate> candidates  = submit.getCandidates();
+                    int index = candidates.indexOf(lastCandidate);
+                    candidates.subList(0, index + 1).clear();
+                    candidates.forEach(store::notifyListeners);
+                    lastCandidate = candidates.get(candidates.size() - 1);
+
+                } catch(Exception e) {
+                    LOG.error("CANTEST: Shard catch exception: {}", e.getMessage());
+                    e.printStackTrace();
+                }
+            } else if(message instanceof DistributedPubSubMediator.SubscribeAck){
+                LOG.info("{} got SubscribeACK.", self().path());
+            }else{
                 super.handleNonRaftCommand(message);
             }
         }

@@ -25,9 +25,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Thomas Pantelis
  */
-//ShardDataTreeChangeListenerPublisher的默认实现，直接产生并发布dataTreeChangeListeners的通知
 @NotThreadSafe
-final class DefaultShardDataTreeChangeListenerPublisher extends AbstractDOMStoreTreeChangePublisher
+final class
+DefaultShardDataTreeChangeListenerPublisher extends AbstractDOMStoreTreeChangePublisher
         implements ShardDataTreeChangeListenerPublisher {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultShardDataTreeChangeListenerPublisher.class);
 
@@ -47,6 +47,7 @@ final class DefaultShardDataTreeChangeListenerPublisher extends AbstractDOMStore
         final Collection<DataTreeCandidate> changes = Collections.<DataTreeCandidate>singleton(
                 DataTreeCandidates.newDataTreeCandidate(path, node));
 
+//        LOG.info("CANTEST: notifyListeners changes={}", changes);
         for (AbstractDOMDataTreeChangeListenerRegistration<?> reg : registrations) {
             reg.getInstance().onDataTreeChanged(changes);
         }

@@ -1,2 +1,0 @@
-# controller
-codes from opendaylight.

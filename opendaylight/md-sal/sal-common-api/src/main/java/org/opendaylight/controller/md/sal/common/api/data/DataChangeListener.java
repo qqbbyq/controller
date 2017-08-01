@@ -16,7 +16,6 @@ import org.opendaylight.yangtools.concepts.Path;
  * @deprecated Replaced by {@link AsyncDataChangeEvent}
  */
 @Deprecated
-//这个方法可能被一个共享的线程池调用，已被重写
 public interface DataChangeListener<P extends Path<P>, D> extends EventListener {
     /**
      * Note that this method may be invoked from a shared thread pool, so

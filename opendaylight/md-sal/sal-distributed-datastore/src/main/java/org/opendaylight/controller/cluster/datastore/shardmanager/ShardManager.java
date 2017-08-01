@@ -114,11 +114,6 @@ import scala.concurrent.duration.FiniteDuration;
  * <li> Monitor the cluster members and store their addresses
  * <ul>
  */
-//ShardManager:
-    //创建属于这个集群成员的所有local shard
-    //寻找localshard
-    //寻找任意shard的主副本
-    //监视集群成员并存储他们的地址
 class ShardManager extends AbstractUntypedPersistentActorWithMetering {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShardManager.class);
@@ -194,7 +189,6 @@ class ShardManager extends AbstractUntypedPersistentActorWithMetering {
         if (message  instanceof FindPrimary) {
             findPrimary((FindPrimary)message);
         } else if(message instanceof FindLocalShard){
-            //寻找本地的shard,FindLocalShard(shardName, 是否等待初始化）
             findLocalShard((FindLocalShard) message);
         } else if (message instanceof UpdateSchemaContext) {
             updateSchemaContext(message);
@@ -667,22 +661,16 @@ class ShardManager extends AbstractUntypedPersistentActorWithMetering {
     }
 
     private void findLocalShard(FindLocalShard message) {
-
         final ShardInformation shardInformation = localShards.get(message.getShardName());
-        //当shardInformation为空时，回复localshardnotfound
+
         if(shardInformation == null){
             getSender().tell(new LocalShardNotFound(message.getShardName()), getSelf());
             return;
         }
 
-        sendResponse(shardInformation,
-          message.isWaitUntilInitialized(),
-          false,
-          () -> new LocalShardFound(shardInformation.getActor())
-        );
+        sendResponse(shardInformation, message.isWaitUntilInitialized(), false, () -> new LocalShardFound(shardInformation.getActor()));
     }
 
-    //在findLocalShard调用的sendResponse里面，doWait=true,wantShardReady=false
     private void sendResponse(ShardInformation shardInformation, boolean doWait,
             boolean wantShardReady, final Supplier<Object> messageSupplier) {
         if (!shardInformation.isShardInitialized() || (wantShardReady && !shardInformation.isShardReadyWithLeaderId())) {
@@ -695,7 +683,6 @@ class ShardManager extends AbstractUntypedPersistentActorWithMetering {
                 OnShardInitialized onShardInitialized = wantShardReady ? new OnShardReady(replyRunnable) :
                     new OnShardInitialized(replyRunnable);
 
-                //TODO: When And Where does the shard create
                 shardInformation.addOnShardInitialized(onShardInitialized);
 
                 FiniteDuration timeout = shardInformation.getDatastoreContext().getShardInitializationTimeout().duration();
@@ -1022,7 +1009,6 @@ class ShardManager extends AbstractUntypedPersistentActorWithMetering {
             LOG.debug("{}: Creating local shard: {}", persistenceId(), shardId);
 
             Map<String, String> peerAddresses = getPeerAddresses(shardName);
-            //从配置文件里拿出LocalShards的信息，并生成builder，但此时shard并没有创建
             localShards.put(shardName, new ShardInformation(shardName, shardId, peerAddresses,
                     newShardDatastoreContext(shardName), Shard.builder().restoreFromSnapshot(
                         shardSnapshots.get(shardName)), peerAddressResolver));

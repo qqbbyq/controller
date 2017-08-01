@@ -1,0 +1,56 @@
+module akkatest {
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:akkatest";
+    prefix "akkatest";
+
+    revision "2015-01-05" {
+        description "Initial revision of akkatest model";
+    }
+
+    rpc hello-world {  //新增
+        input {
+            leaf name {
+                type string;
+            }
+        }
+        output {
+            leaf greeting {
+                type string;
+            }
+        }
+    }
+
+    container food {
+
+          container fruits {
+            list fruit{
+              key name;
+              leaf name {
+                type string;
+              }
+
+              leaf color {
+                type string;
+              }
+
+              leaf age{
+                type string;
+              }
+            }
+          }
+
+          container vegetables{
+            list vegetable{
+                        key name;
+                        leaf name {
+                          type string;
+                        }
+                      }
+          }
+
+          container snacks{
+          }
+
+    }
+
+}

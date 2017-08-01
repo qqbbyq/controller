@@ -8,6 +8,7 @@
 package org.opendaylight.controller.cluster.datastore;
 
 import akka.actor.ActorRef;
+import akka.cluster.pubsub.CandidateWrapper;
 import akka.util.Timeout;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -20,15 +21,9 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -56,16 +51,7 @@ import org.opendaylight.yangtools.concepts.Identifier;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.ConflictingModificationAppliedException;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidateTip;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidates;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeModification;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeSnapshot;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.DataValidationFailedException;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.ModificationType;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.TipProducingDataTree;
-import org.opendaylight.yangtools.yang.data.api.schema.tree.TreeType;
+import org.opendaylight.yangtools.yang.data.api.schema.tree.*;
 import org.opendaylight.yangtools.yang.data.impl.schema.tree.InMemoryDataTreeFactory;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.slf4j.Logger;
@@ -97,7 +83,6 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
     private final Map<LocalHistoryIdentifier, ShardDataTreeTransactionChain> transactionChains = new HashMap<>();
     private final DataTreeCohortActorRegistry cohortRegistry = new DataTreeCohortActorRegistry();
     private final Queue<CommitEntry> pendingTransactions = new ArrayDeque<>();
-    //区分DataTree和Data二者changeListenerPublisher
     private final ShardDataTreeChangeListenerPublisher treeChangeListenerPublisher;
     private final ShardDataChangeListenerPublisher dataChangeListenerPublisher;
     private final Collection<ShardDataTreeMetadata<?>> metadata;
@@ -108,15 +93,9 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
 
     private SchemaContext schemaContext;
 
-    //初始化的时候传进来Shard,dataTree,treeChangePublisher, dataChangePublisher, 和一些context以及metadata
-    //metadata是collection用于做快照等时候使用，是元数据
-    public ShardDataTree(
-            final Shard shard,
-            final SchemaContext schemaContext,
-            final TipProducingDataTree dataTree,
+    public ShardDataTree(final Shard shard, final SchemaContext schemaContext, final TipProducingDataTree dataTree,
             final ShardDataTreeChangeListenerPublisher treeChangeListenerPublisher,
-            final ShardDataChangeListenerPublisher dataChangeListenerPublisher,
-            final String logContext,
+            final ShardDataChangeListenerPublisher dataChangeListenerPublisher, final String logContext,
             final ShardDataTreeMetadata<?>... metadata) {
         this.dataTree = Preconditions.checkNotNull(dataTree);
         updateSchemaContext(schemaContext);
@@ -162,7 +141,7 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
      * Take a snapshot of current state for later recovery.
      *
      * @return A state snapshot
-     *///同时取dataTree和metadata的snapshot
+     */
     @Nonnull ShardDataTreeSnapshot takeStateSnapshot() {
         final NormalizedNode<?, ?> rootNode = dataTree.takeSnapshot().readNode(YangInstanceIdentifier.EMPTY).get();
         final Builder<Class<? extends ShardDataTreeSnapshotMetadata<?>>, ShardDataTreeSnapshotMetadata<?>> metaBuilder =
@@ -171,8 +150,6 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         for (ShardDataTreeMetadata<?> m : metadata) {
             final ShardDataTreeSnapshotMetadata<?> meta = m.toSnapshot();
             if (meta != null) {
-                //这里不是类似hashmap覆盖的put操作，这里builder将key和value包装成entry
-                // 然后，entrys[size++] = entry(意思是这样）
                 metaBuilder.put(meta.getType(), meta);
             }
         }
@@ -219,6 +196,8 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         dataTree.validate(unwrapped);
         DataTreeCandidateTip candidate = dataTree.prepare(unwrapped);
         dataTree.commit(candidate);
+
+        //removed by zhuyuqing
         notifyListeners(candidate);
 
         LOG.debug("{}: state snapshot applied in %s", logContext, elapsed);
@@ -312,7 +291,8 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         final DataTreeCandidate candidate = dataTree.prepare(mod);
         dataTree.commit(candidate);
 
-        notifyListeners(candidate);
+        //removed by zhuyuqing
+        // notifyListeners(candidate);
     }
 
     /**
@@ -338,11 +318,11 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
          * pre-Boron state -- which limits the number of options here.
          */
         if (payload instanceof CommitTransactionPayload) {
-            if (identifier == null) {
+            if (identifier == null) {//follower
                 final Entry<TransactionIdentifier, DataTreeCandidate> e = ((CommitTransactionPayload) payload).getCandidate();
                 applyReplicatedCandidate(e.getKey(), e.getValue());
                 allMetadataCommittedTransaction(e.getKey());
-            } else {
+            } else {//leader
                 Verify.verify(identifier instanceof TransactionIdentifier);
                 payloadReplicationComplete((TransactionIdentifier) identifier);
             }
@@ -401,28 +381,30 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
     }
 
     public void notifyListeners(final DataTreeCandidate candidate) {
+//        LOG.info("CANTEST: notifyListeners got candidate path={}.", candidate.getRootPath());
+//        LOG.info("CANTEST: notifyListeners got candidate RootNode.path={}.", candidate.getRootNode().getIdentifier());
         treeChangeListenerPublisher.publishChanges(candidate, logContext);
         dataChangeListenerPublisher.publishChanges(candidate, logContext);
     }
 
-
-    //通知原始数据DataChange
     void notifyOfInitialData(final DataChangeListenerRegistration<AsyncDataChangeListener<YangInstanceIdentifier,
             NormalizedNode<?, ?>>> listenerReg, final Optional<DataTreeCandidate> currentState) {
         if (currentState.isPresent()) {
             ShardDataChangeListenerPublisher localPublisher = dataChangeListenerPublisher.newInstance();
             localPublisher.registerDataChangeListener(listenerReg.getPath(), listenerReg.getInstance(),
                     listenerReg.getScope());
+
+            //removed by zhuyuqing
             localPublisher.publishChanges(currentState.get(), logContext);
         }
     }
 
-    //通知原始数据DataTreeChange
     void notifyOfInitialData(final YangInstanceIdentifier path, final DOMDataTreeChangeListener listener,
             final Optional<DataTreeCandidate> currentState) {
-        if (currentState.isPresent()) {//currentState是否为空,若不为空，新建一个publisher的实例
+        if (currentState.isPresent()) {
             ShardDataTreeChangeListenerPublisher localPublisher = treeChangeListenerPublisher.newInstance();
             localPublisher.registerTreeChangeListener(path, listener);
+            //removed by zhuyuqing
             localPublisher.publishChanges(currentState.get(), logContext);
         }
     }
@@ -444,7 +426,6 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         }
     }
 
-    //DataChangeListener的注册过程，参数中包含scope
     Entry<DataChangeListenerRegistration<AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>>>,
             Optional<DataTreeCandidate>> registerChangeListener(final YangInstanceIdentifier path,
                     final AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>> listener,
@@ -455,14 +436,12 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         return new SimpleEntry<>(reg, readCurrentData());
     }
 
-    //不区分DataTreeChangeListener和DataChangeListener
     private Optional<DataTreeCandidate> readCurrentData() {
         final Optional<NormalizedNode<?, ?>> currentState = dataTree.takeSnapshot().readNode(YangInstanceIdentifier.EMPTY);
         return currentState.isPresent() ? Optional.of(DataTreeCandidates.fromNormalizedNode(
             YangInstanceIdentifier.EMPTY, currentState.get())) : Optional.<DataTreeCandidate>absent();
     }
 
-    //DataTreeChangeListener的注册过程，其中没有参数scope
     public Entry<ListenerRegistration<DOMDataTreeChangeListener>, Optional<DataTreeCandidate>> registerTreeChangeListener(
             final YangInstanceIdentifier path, final DOMDataTreeChangeListener listener) {
         final ListenerRegistration<DOMDataTreeChangeListener> reg = treeChangeListenerPublisher.registerTreeChangeListener(
@@ -631,10 +610,31 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
 
         // FIXME: propagate journal index
         pendingTransactions.poll().cohort.successfulCommit(UnsignedLong.ZERO);
+        LOG.info("***************************************************************************");
 
-        LOG.trace("{}: Transaction {} committed, proceeding to notify", logContext, txId);
-        //在finishCommit的过程中notify了Listener
-        notifyListeners(candidate);
+//        LOG.info("{}: Transaction {} committed, proceeding to notify", logContext, txId);
+        LOG.info("CANTEST: {} candidate is {}", txId, candidate);
+//        LOG.info("CANTEST: {} candidate.rootPath is {}", txId, candidate.getRootPath());
+//        LOG.info("CANTEST: {} candidateNode is {}", txId, candidate.getRootNode());
+//        LOG.trace("CANTEST: {} candidateNode.identifier is {}", txId, candidate.getRootNode().getIdentifier());
+//        LOG.info("CANTEST: {} candidateNode.childs is {}", txId, candidate.getRootNode().getChildNodes());
+//        LOG.info("CANTEST: {} candidateNode.before is {}", txId, candidate.getRootNode().getDataBefore());
+//        LOG.info("CANTEST: {} candidateNode.after is {}", txId, candidate.getRootNode().getDataAfter());
+        // DataTreeCandidateNode tmp = candidate.getRootNode();
+        // Queue<DataTreeCandidateNode> queue = new LinkedList<>();
+        // queue.offer(tmp);
+        // while( !queue.isEmpty()){
+            // tmp = queue.poll();
+            // tmp.getChildNodes().forEach(queue::offer);
+            // LOG.info("CANTEST1: tmp={}, tmp.childs={}", tmp, tmp.getChildNodes());
+        // }
+        // LOG.info("***************************************************************************");
+        //important removed by zhuyuqing
+        // notifyListeners(candidate);
+//        added by zhuyuqing
+//        LOG.info("CANTEST: candidate publisher {} proceeding to notify", txId);
+       CandidatePublisher.publish(System.nanoTime(), candidate);
+        LOG.info("CANTEST: candidate publisher {} done.", txId);
 
         processNextTransaction();
     }

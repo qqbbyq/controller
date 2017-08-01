@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
  *
  * @author Thomas Pantelis
  */
-//ShardDataChangeListenerPublisher的默认实现，类似于DefaultShardDataTreeChangeListenerPublisher
 @NotThreadSafe
 final class DefaultShardDataChangeListenerPublisher implements ShardDataChangeListenerPublisher,
         NotificationManager<DataChangeListenerRegistration<?>, DOMImmutableDataChangeEvent> {
@@ -35,9 +34,8 @@ final class DefaultShardDataChangeListenerPublisher implements ShardDataChangeLi
 
     private final ListenerTree dataChangeListenerTree = ListenerTree.create();
 
-    @Override//DataChangeListener来这里通知数据改变的事件
-    public void submitNotification(final DataChangeListenerRegistration<?> listener,
-                                   final DOMImmutableDataChangeEvent notification) {
+    @Override
+    public void submitNotification(final DataChangeListenerRegistration<?> listener, final DOMImmutableDataChangeEvent notification) {
         LOG.debug("Notifying listener {} about {}", listener.getInstance(), notification);
 
         listener.getInstance().onDataChanged(notification);
@@ -55,7 +53,6 @@ final class DefaultShardDataChangeListenerPublisher implements ShardDataChangeLi
 
     @Override
     public void publishChanges(DataTreeCandidate candidate, String logContext) {
-        //传入了currState也就是包装后的candidate，以及ListenerTree
         ResolveDataChangeEventsTask.create(candidate, dataChangeListenerTree).resolve(this);
     }
 

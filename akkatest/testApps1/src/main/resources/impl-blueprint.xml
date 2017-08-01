@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:odl="http://opendaylight.org/xmlns/blueprint/v1.0.0"
+           odl:use-default-for-reference-types="true">
+
+  <reference id="dataBroker"
+             interface="org.opendaylight.controller.md.sal.binding.api.DataBroker"
+             odl:type="default" />
+
+  <bean id="listentestProvider" class="org.cmcc.aero.testApps1.ListentestProvider">
+    <argument ref="dataBroker" />
+  </bean>
+
+  <!--
+    <bean id="redisSvc" class="org.opendaylight.xstore.datacache.RedisService" factory-method="createInstance">
+      <argument value="192.168.39.241" />
+      <argument type="java.lang.Integer" value="6379" />
+      <argument value="123456" />
+    </bean>
+  -->
+
+
+</blueprint>

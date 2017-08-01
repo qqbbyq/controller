@@ -19,7 +19,6 @@ import org.opendaylight.controller.cluster.datastore.messages.EnableNotification
 import org.opendaylight.controller.cluster.datastore.messages.RegisterDataTreeChangeListener;
 import org.opendaylight.controller.cluster.datastore.messages.RegisterDataTreeChangeListenerReply;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeChangeListener;
-import org.opendaylight.controller.md.sal.dom.spi.AbstractDOMDataTreeChangeListenerRegistration;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
 
@@ -49,23 +48,20 @@ final class DataTreeChangeListenerSupport extends AbstractDataListenerSupport<DO
         // Now store a reference to the data change listener so it can be notified
         // at a later point if notifications should be enabled or disabled
         if(!message.isRegisterOnAllInstances()) {
-            //如果不是cluster模式，意味着，leader的身份有可能会变，所以notification也有可能会被改变，因此留着引用
             addListenerActor(dataChangeListenerPath);
         }
 
         DOMDataTreeChangeListener listener = new ForwardingDataTreeChangeListener(dataChangeListenerPath);
 
         log().debug("{}: Registering for path {}", persistenceId(), message.getPath());
-        //向publisher登记一个ForwardingDataTreeChangeListener，会进行转发到listener
+
         Entry<ListenerRegistration<DOMDataTreeChangeListener>, Optional<DataTreeCandidate>> regEntry =
                 getShard().getDataStore().registerTreeChangeListener(message.getPath(), listener);
 
-        //regEntry.getKey().getInstance()就是包装好的forwardingListener,value是currentDataTree:DataTreeCandidate
         getShard().getDataStore().notifyOfInitialData(message.getPath(),
                 regEntry.getKey().getInstance(), regEntry.getValue());
 
         listenerActors.add(dataChangeListenerPath);
-//        AbstractDOMDataTreeChangeListenerRegistration
         final ListenerRegistration<DOMDataTreeChangeListener> delegate = regEntry.getKey();
         return new ListenerRegistration<DOMDataTreeChangeListener>() {
             @Override

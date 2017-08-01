@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.opendaylight.controller</groupId>
     <artifactId>sal-parent</artifactId>
-    <version>1.4.3-Boron-SR3</version>
+    <version>1.4.4-Boron-SR4</version>
   </parent>
   <artifactId>sal-distributed-datastore</artifactId>
   <packaging>bundle</packaging>
@@ -66,7 +66,34 @@
       <artifactId>akka-testkit_${scala.version}</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- pom added by zhuyuqing on 2017/7/10 -->
+    <!--scala-->
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-compiler</artifactId>
+      <version>2.11.8</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-reflect</artifactId>
+      <version>2.11.8</version>
+    </dependency>
 
+    <!--akka-->
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-tools_${scala.version}</artifactId>
+      <version>2.4.7</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-cluster-metrics_${scala.version}</artifactId>
+      <version>2.4.7</version>
+    </dependency>
     <!-- Codahale -->
     <dependency>
       <groupId>com.codahale.metrics</groupId>
@@ -81,12 +108,6 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-    </dependency>
-
-    <!-- Scala -->
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-library</artifactId>
     </dependency>
 
     <!-- OpenDaylight -->
@@ -209,6 +230,7 @@
                 org.opendaylight.controller.cluster.datastore.config;
                 org.opendaylight.controller.cluster.datastore.messages;
                 org.opendaylight.controller.cluster.datastore.utils;
+                akka.cluster.pubsub;
             </Export-Package>
             <Import-Package>
                 !*snappy;
@@ -242,17 +264,6 @@
         </configuration>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -310,6 +321,54 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <version>2.15.1</version>
+        <executions>
+          <execution>
+            <id>scala-compile</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>scala-test-compile</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
   <scm>

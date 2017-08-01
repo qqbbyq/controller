@@ -42,7 +42,6 @@ public final class DataTreeChangeListenerRegistrationActor extends AbstractUntyp
         }
     }
 
-    //创建
     public static Props props(final ListenerRegistration<DOMDataTreeChangeListener> registration) {
         return Props.create(new DataTreeChangeListenerRegistrationCreator(registration));
     }

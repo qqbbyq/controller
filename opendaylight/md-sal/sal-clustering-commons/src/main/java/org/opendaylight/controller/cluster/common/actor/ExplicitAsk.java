@@ -25,7 +25,6 @@ import scala.runtime.AbstractFunction1;
  * @author Robert Varga
  */
 @Beta
-//ExplicitAsk的java版本，调用scala的api
 public final class ExplicitAsk {
     private static final ExplicitAskSupport ASK_SUPPORT = akka.pattern.extended.package$.MODULE$;
 

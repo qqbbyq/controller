@@ -14,7 +14,6 @@ import org.opendaylight.controller.sal.core.spi.data.DOMStoreTreeChangePublisher
  *
  * @author Thomas Pantelis
  */
-//DataTreeChangeListener的接口，生成并发布通知
 interface ShardDataTreeChangeListenerPublisher extends ShardDataTreeNotificationPublisher, DOMStoreTreeChangePublisher {
     ShardDataTreeChangeListenerPublisher newInstance();
 }

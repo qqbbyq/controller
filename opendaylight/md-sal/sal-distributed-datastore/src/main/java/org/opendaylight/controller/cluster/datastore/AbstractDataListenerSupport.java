@@ -64,18 +64,16 @@ abstract class AbstractDataListenerSupport<L extends EventListener, M extends Li
         log.debug("{}: {} for {}, leader: {}", persistenceId(), logName(), message.getPath(), isLeader);
 
         final ListenerRegistration<L> registration;
-        //如果是leader 或有ledaer且是cluster的情况下，也就是说这个shard应该被通知，创建委托
         if (hasLeader && message.isRegisterOnAllInstances() || isLeader) {
             registration = createDelegate(message);
-        } else {//如果不是，即有leader&&不是cluster模式 或者没leader不确定是不是cluster模式两种情况
+        } else {
             log.debug("{}: Shard is not the leader - delaying registration", persistenceId());
 
             D delayedReg = newDelayedListenerRegistration(message);
-            if(message.isRegisterOnAllInstances()) {//如果是cluster模式
+            if(message.isRegisterOnAllInstances()) {
                 delayedListenerOnAllRegistrations.add(delayedReg);
-            } else {//如果不是
+            } else {
                 delayedListenerRegistrations.add(delayedReg);
-                //如果leadership发生了变更，可以将delayed的registration重新处理
             }
 
             registration = delayedReg;
