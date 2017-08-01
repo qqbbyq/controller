@@ -23,7 +23,7 @@ public abstract class AbstractShardManagerCreator<T extends AbstractShardManager
     private CountDownLatch waitTillReadyCountdownLatch;
     private PrimaryShardInfoFutureCache primaryShardInfoCache;
     private DatastoreSnapshot restoreFromSnapshot;
-    private volatile boolean sealed; //推测默认未false,是否密封，若未true则已经密封，不允许修改
+    private volatile boolean sealed;
 
     AbstractShardManagerCreator() {
         // Prevent outside instantiation
@@ -35,7 +35,6 @@ public abstract class AbstractShardManagerCreator<T extends AbstractShardManager
     }
 
     protected final void checkSealed() {
-        //若!!sealer=true即若sealed=true，则抛出exception:不允许修改
         Preconditions.checkState(!sealed, "Builder is already sealed - further modifications are not allowed");
     }
 
@@ -74,7 +73,7 @@ public abstract class AbstractShardManagerCreator<T extends AbstractShardManager
     }
 
     public T waitTillReadyCountdownLatch(CountDownLatch waitTillReadyCountdownLatch) {
-        checkSealed();//是否还允许修改，若不允许会抛出exception
+        checkSealed();
         this.waitTillReadyCountdownLatch = waitTillReadyCountdownLatch;
         return self();
     }

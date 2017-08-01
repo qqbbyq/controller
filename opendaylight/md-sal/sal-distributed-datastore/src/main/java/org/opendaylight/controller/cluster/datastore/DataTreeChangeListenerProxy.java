@@ -33,10 +33,6 @@ import scala.concurrent.Future;
  *
  * @param <T> listener type
  */
-//DataTreeChangeListenerProxy内部维护了dataTreeChangeListenerActor和registractionActor两个对象
-    //初始化时去寻找本地的shardActor并doRegister
-    //理解上是，初始化的时候构建一个dataChangeListenerActor（维护一个传入的listener对象，和path),
-// 然后带着她向本地的shardActor注册，返回一个registration，用于取消注册。
 final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> extends AbstractListenerRegistration<T> {
     private static final Logger LOG = LoggerFactory.getLogger(DataTreeChangeListenerProxy.class);
     private final ActorRef dataChangeListenerActor;
@@ -46,10 +42,9 @@ final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> ext
     @GuardedBy("this")
     private ActorSelection listenerRegistrationActor;
 
-
     DataTreeChangeListenerProxy(final ActorContext actorContext, final T listener,
             final YangInstanceIdentifier registeredPath) {
-        super(listener); //将listen赋值给instance
+        super(listener);
         this.actorContext = Preconditions.checkNotNull(actorContext);
         this.registeredPath = Preconditions.checkNotNull(registeredPath);
         this.dataChangeListenerActor = actorContext.getActorSystem().actorOf(
@@ -57,7 +52,7 @@ final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> ext
                     .withDispatcher(actorContext.getNotificationDispatcherPath()));
     }
 
-    @Override//取消订阅后，关闭registraction并杀死dataChangeListenerActor
+    @Override
     protected synchronized void removeRegistration() {
         if (listenerRegistrationActor != null) {
             listenerRegistrationActor.tell(CloseDataTreeChangeListenerRegistration.getInstance(), ActorRef.noSender());
@@ -68,7 +63,6 @@ final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> ext
     }
 
     void init(final String shardName) {
-        //根据SHardname找到本地对应的ShardActor
         Future<ActorRef> findFuture = actorContext.findLocalShardAsync(shardName);
         findFuture.onComplete(new OnComplete<ActorRef>() {
             @Override
@@ -103,14 +97,11 @@ final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> ext
         actor.tell(CloseDataTreeChangeListenerRegistration.getInstance(), null);
     }
 
-    //找到shardActor后进行一次注册
     private void doRegistration(final ActorRef shard) {
 
-        //向shard请求registerDataTreeChangeListener，传入dataChangeListenerActor,并获得listenerRegistractionActor的地址
         Future<Object> future = actorContext.executeOperationAsync(shard,
                 new RegisterDataTreeChangeListener(registeredPath, dataChangeListenerActor,
                         getInstance() instanceof ClusteredDOMDataTreeChangeListener),
-                //就看最开始传进来的instance是否instanceOf Clusterxxxx
                 actorContext.getDatastoreContext().getShardInitializationTimeout());
 
         future.onComplete(new OnComplete<Object>(){
@@ -120,8 +111,6 @@ final class DataTreeChangeListenerProxy<T extends DOMDataTreeChangeListener> ext
                     LOG.error("Failed to register DataTreeChangeListener {} at path {}",
                             getInstance(), registeredPath, failure);
                 } else {
-                    //从回复中获得ListenerRegistractionActor的path,保存在listenerRegistractionActor变量里
-                    //用于关闭listenerRegistrationActor
                     RegisterDataTreeChangeListenerReply reply = (RegisterDataTreeChangeListenerReply) result;
                     setListenerRegistrationActor(actorContext.actorSelection(
                             reply.getListenerRegistrationPath()));

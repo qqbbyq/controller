@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.opendaylight.controller</groupId>
     <artifactId>sal-parent</artifactId>
-    <version>1.4.3-Boron-SR3</version>
+    <version>1.4.4-Boron-SR4</version>
   </parent>
   <artifactId>sal-dom-broker-config</artifactId>
   <packaging>bundle</packaging>
@@ -55,7 +55,7 @@
             <configuration>
               <codeGenerators>
                 <generator>
-                  <codeGeneratorClass>org.opendaylight.org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl</codeGeneratorClass>
+                  <codeGeneratorClass>org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl</codeGeneratorClass>
                   <outputBaseDir>${salGeneratorPath}</outputBaseDir>
                 </generator>
                 <generator>
@@ -66,7 +66,7 @@
                   </additionalConfiguration>
                 </generator>
                 <generator>
-                  <codeGeneratorClass>org.opendaylight.org.opendaylight.yangtools.yang.unified.doc.generator.maven.DocumentationGeneratorImpl</codeGeneratorClass>
+                  <codeGeneratorClass>org.opendaylight.yangtools.yang.unified.doc.generator.maven.DocumentationGeneratorImpl</codeGeneratorClass>
                   <outputBaseDir>target/site/models</outputBaseDir>
                 </generator>
               </codeGenerators>

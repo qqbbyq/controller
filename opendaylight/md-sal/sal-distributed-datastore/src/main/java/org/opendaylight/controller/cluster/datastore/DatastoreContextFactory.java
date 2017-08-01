@@ -19,12 +19,10 @@ public class DatastoreContextFactory {
         this.introspector = introspector;
     }
 
-    //根据shardName取出配置项
     public DatastoreContext getShardDatastoreContext(String forShardName) {
         return introspector.getShardDatastoreContext(forShardName);
     }
 
-    //去除基础配置项
     public DatastoreContext getBaseDatastoreContext() {
         return introspector.getContext();
     }

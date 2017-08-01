@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * of data tree notifications to an actor.
  *
  * @author Thomas Pantelis
- *///抽象类，implement by ShardDataTreeChangeListenerPublisherActorProxy and ShardDataChangeListenerPublisherActorProxy
+ */
 @NotThreadSafe
 abstract class AbstractShardDataTreeNotificationPublisherActorProxy implements ShardDataTreeNotificationPublisher {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractShardDataTreeNotificationPublisherActorProxy.class);

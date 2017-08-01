@@ -20,7 +20,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 /**
  * DataChangeListenerProxy represents a single remote DataChangeListener
  */
-//DataChangeListenerProxy代表一个独立的远程dataChangeListener,也是用作一个转发的中介
 public class DataChangeListenerProxy implements AsyncDataChangeListener<YangInstanceIdentifier, NormalizedNode<?, ?>>{
     private final ActorSelection dataChangeListenerActor;
 

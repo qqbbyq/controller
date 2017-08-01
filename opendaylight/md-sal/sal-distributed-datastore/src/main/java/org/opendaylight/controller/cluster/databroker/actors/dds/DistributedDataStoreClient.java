@@ -17,11 +17,10 @@ import org.opendaylight.yangtools.concepts.Identifiable;
  * which the DistributedDataStore frontend interacts with backend Shards.
  *
  * Keep this interface as clean as possible, as it needs to be implemented in thread-safe and highly-efficient manner.
- *  线程安全和高效
+ *
  * @author Robert Varga
  */
 @Beta
-//客户与前台actor交互的接口，这是前台与后台shards交互的主要接入点，用ClientIdentifier唯一标示
 public interface DistributedDataStoreClient extends Identifiable<ClientIdentifier>, AutoCloseable {
     @Override
     @Nonnull ClientIdentifier getIdentifier();

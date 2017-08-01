@@ -42,14 +42,12 @@ import org.slf4j.LoggerFactory;
  * @author Thomas Pantelis
  */
 @Beta
-//cluster的dataBroker
 public class ConcurrentDOMDataBroker extends AbstractDOMBroker {
     private static final Logger LOG = LoggerFactory.getLogger(ConcurrentDOMDataBroker.class);
     private static final String CAN_COMMIT = "CAN_COMMIT";
     private static final String PRE_COMMIT = "PRE_COMMIT";
     private static final String COMMIT = "COMMIT";
 
-    //这是一个concurrent版本的statisticTracker
     private final DurationStatisticsTracker commitStatsTracker;
 
     /**
@@ -57,16 +55,12 @@ public class ConcurrentDOMDataBroker extends AbstractDOMBroker {
      */
     private final Executor clientFutureCallbackExecutor;
 
-    public ConcurrentDOMDataBroker(
-      final Map<LogicalDatastoreType, DOMStore> datastores,
-      Executor listenableFutureExecutor) {
+    public ConcurrentDOMDataBroker(final Map<LogicalDatastoreType, DOMStore> datastores, Executor listenableFutureExecutor) {
         this(datastores, listenableFutureExecutor, DurationStatisticsTracker.createConcurrent());
     }
 
-    public ConcurrentDOMDataBroker(
-      final Map<LogicalDatastoreType, DOMStore> datastores,
-      Executor listenableFutureExecutor,
-      DurationStatisticsTracker commitStatsTracker) {
+    public ConcurrentDOMDataBroker(final Map<LogicalDatastoreType, DOMStore> datastores, Executor listenableFutureExecutor,
+            DurationStatisticsTracker commitStatsTracker) {
         super(datastores);
         this.clientFutureCallbackExecutor = Preconditions.checkNotNull(listenableFutureExecutor);
         this.commitStatsTracker = Preconditions.checkNotNull(commitStatsTracker);

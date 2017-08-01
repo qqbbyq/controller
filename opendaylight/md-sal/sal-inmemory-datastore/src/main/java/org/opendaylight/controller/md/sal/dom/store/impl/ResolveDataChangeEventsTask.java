@@ -35,17 +35,13 @@ import org.slf4j.LoggerFactory;
  * Computes data change events for all affected registered listeners in data
  * tree.
  */
-@Beta//在监听者和修改的基础上，解决数据变化事件
-    //在数据树种，为所有受影响的注册过的监听者，计算数据变化事件
+@Beta
 public final class ResolveDataChangeEventsTask {
     private static final Logger LOG = LoggerFactory.getLogger(ResolveDataChangeEventsTask.class);
 
-    //一个Task中对应的candidate对象
     private final DataTreeCandidate candidate;
-    //ShardTree维护的listenerTree
     private final ListenerTree listenerRoot;
 
-    //每次resolve的时候，会被initial
     private Multimap<DataChangeListenerRegistration<?>, DOMImmutableDataChangeEvent> collectedEvents;
 
     private ResolveDataChangeEventsTask(final DataTreeCandidate candidate, final ListenerTree listenerTree) {
@@ -57,24 +53,18 @@ public final class ResolveDataChangeEventsTask {
      * Resolves and submits notification tasks to the specified manager.
      */
     public synchronized void resolve(final NotificationManager<DataChangeListenerRegistration<?>, DOMImmutableDataChangeEvent> manager) {
-        //取ListenerTree的一个快照为w
         try (final RegistrationTreeSnapshot<DataChangeListenerRegistration<?>> w = listenerRoot.takeSnapshot()) {
-
             // Defensive: reset internal state
             collectedEvents = ArrayListMultimap.create();
 
             // Run through the tree
-            //生成一个ChangeState对象，使用candidate的rootPath和listenerTree的根节点初始化
-            final ResolveDataChangeState s =
-              ResolveDataChangeState.initial(candidate.getRootPath(), w.getRootNode());
-            //state里面的是快照里的node
-            //candidate是
-            resolveAnyChangeEvent(s, candidate.getRootNode());//最后collect到Task的collectedEvents这个变量里
+            final ResolveDataChangeState s = ResolveDataChangeState.initial(candidate.getRootPath(), w.getRootNode());
+            resolveAnyChangeEvent(s, candidate.getRootNode());
 
             /*
              * Convert to tasks, but be mindful of multiple values -- those indicate multiple
              * wildcard matches, which need to be merged.
-             *///可以看出这里submit了多个notification，oh yes
+             */
             for (Entry<DataChangeListenerRegistration<?>, Collection<DOMImmutableDataChangeEvent>> e : collectedEvents.asMap().entrySet()) {
                 final Collection<DOMImmutableDataChangeEvent> col = e.getValue();
                 final DOMImmutableDataChangeEvent event;
@@ -98,7 +88,7 @@ public final class ResolveDataChangeEventsTask {
 
     /**
      * Resolves data change event for supplied node
-     * 为提供的节点，解析数据变化事件
+     *
      * @param path
      *            Path to current node in tree
      * @param listeners
@@ -111,7 +101,7 @@ public final class ResolveDataChangeEventsTask {
      * @param after
      *            - After state of current node
      * @return True if the subtree changed, false otherwise
-     *///解析数据变化事件
+     */
     private boolean resolveAnyChangeEvent(final ResolveDataChangeState state, final DataTreeCandidateNode node) {
         final Optional<NormalizedNode<?, ?>> maybeBefore = node.getDataBefore();
         final Optional<NormalizedNode<?, ?>> maybeAfter = node.getDataAfter();
@@ -257,7 +247,8 @@ public final class ResolveDataChangeEventsTask {
             // Node has children, so we will try to resolve it's children
             // changes.
             @SuppressWarnings("unchecked")
-            NormalizedNodeContainer<?, PathArgument, NormalizedNode<PathArgument, ?>> container = (NormalizedNodeContainer<?, PathArgument, NormalizedNode<PathArgument, ?>>) node;
+            NormalizedNodeContainer<?, PathArgument, NormalizedNode<PathArgument, ?>> container =
+              (NormalizedNodeContainer<?, PathArgument, NormalizedNode<PathArgument, ?>>) node;
             for (NormalizedNode<PathArgument, ?> child : container.getValue()) {
                 final PathArgument childId = child.getIdentifier();
 

@@ -22,7 +22,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
  * @author Thomas Pantelis
  */
 @NotThreadSafe
-//ShardDataChangeListenerPublisher的实现，类似于ShardDataTreeChangeListenerPublisherActorProxy
 class ShardDataChangeListenerPublisherActorProxy extends AbstractShardDataTreeNotificationPublisherActorProxy
         implements ShardDataChangeListenerPublisher {
 

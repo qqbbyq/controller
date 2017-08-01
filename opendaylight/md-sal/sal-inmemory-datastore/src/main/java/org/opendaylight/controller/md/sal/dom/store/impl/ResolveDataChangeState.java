@@ -52,11 +52,10 @@ final class ResolveDataChangeState {
     private final Map<DataChangeListenerRegistration<?>, Builder> oneBuilders;
     private final Map<DataChangeListenerRegistration<?>, Builder> baseBuilders;
 
-    //初始化的时候，inheritedSub和inheritedOne为空，nodes为singltonList(rootnode)
     private ResolveDataChangeState(final YangInstanceIdentifier nodeId,
             final Iterable<Builder> inheritedSub, final Collection<Builder> inheritedOne,
             final Collection<RegistrationTreeNode<DataChangeListenerRegistration<?>>> nodes) {
-        this.nodeId = Preconditions.checkNotNull(nodeId);//treeId
+        this.nodeId = Preconditions.checkNotNull(nodeId);
         this.nodes = Preconditions.checkNotNull(nodes);
         this.inheritedSub = Preconditions.checkNotNull(inheritedSub);
         this.inheritedOne = Preconditions.checkNotNull(inheritedOne);
@@ -67,10 +66,8 @@ final class ResolveDataChangeState {
         final Map<DataChangeListenerRegistration<?>, Builder> sub = new HashMap<>();
         final Map<DataChangeListenerRegistration<?>, Builder> one = new HashMap<>();
         final Map<DataChangeListenerRegistration<?>, Builder> base = new HashMap<>();
-        //初始化的时候nodes为List<ListenerTree的rootnode>
         for (RegistrationTreeNode<DataChangeListenerRegistration<?>> n : nodes) {
             for (DataChangeListenerRegistration<?> l : n.getRegistrations()) {
-                //注册了rootNode的registrations
                 final Builder b = DOMImmutableDataChangeEvent.builder(DataChangeScope.BASE);
                 switch (l.getScope()) {
                 case BASE:
@@ -105,8 +102,7 @@ final class ResolveDataChangeState {
      * @param registrationTreeNode root node
      * @return
      */
-    public static ResolveDataChangeState initial(final YangInstanceIdentifier rootId,
-                                                 final RegistrationTreeNode<DataChangeListenerRegistration<?>> registrationTreeNode) {
+    public static ResolveDataChangeState initial(final YangInstanceIdentifier rootId, final RegistrationTreeNode<DataChangeListenerRegistration<?>> registrationTreeNode) {
         return new ResolveDataChangeState(rootId, Collections.<Builder>emptyList(),
             Collections.<Builder>emptyList(), Collections.singletonList(registrationTreeNode));
     }

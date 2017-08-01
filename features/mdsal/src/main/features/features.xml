@@ -19,6 +19,7 @@
         <feature version='${project.version}'>odl-mdsal-broker-local</feature>
         <feature version='${project.version}'>odl-mdsal-xsql</feature>
         <feature version='${project.version}'>odl-toaster</feature>
+        <!--<feature version='${project.version}'>odl-akkatest</feature>-->
     </feature>
     <feature name='odl-mdsal-common' version='${project.version}' description="OpenDaylight :: Config :: All">
       <feature version='${yangtools.version}'>odl-yangtools-yang-data</feature>
@@ -67,6 +68,12 @@
         <bundle>mvn:org.opendaylight.controller.samples/sample-toaster-consumer/{{VERSION}}</bundle>
         <bundle>mvn:org.opendaylight.controller.samples/sample-toaster-provider/{{VERSION}}</bundle>
     </feature>
+    <!--<feature name='odl-test' version='${project.version}' description="OpenDaylight :: Test">-->
+        <!--<feature version='${yangtools.version}'>odl-yangtools-common</feature>-->
+        <!--<feature version='${mdsal.version}'>odl-mdsal-binding-runtime</feature>-->
+        <!--<feature version='${project.version}'>odl-mdsal-broker</feature>-->
+        <!--<bundle>mvn:org.cmcc.aero/akkatest-features/0.1.0-SNAPSHOT</bundle>-->
+    <!--</feature>-->
     <feature name ='odl-mdsal-xsql' version='${project.version}'>
         <feature version='${project.version}'>odl-mdsal-broker</feature>
         <bundle>mvn:org.opendaylight.controller/sal-dom-xsql/{{VERSION}}</bundle>

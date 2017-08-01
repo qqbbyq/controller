@@ -37,7 +37,7 @@ final class SimpleShardDataTreeCohort extends ShardDataTreeCohort implements Ide
     private final CompositeDataTreeCohort userCohorts;
 
     private State state = State.READY;
-    private DataTreeCandidateTip candidate; //DataTreeCandidateTip
+    private DataTreeCandidateTip candidate;
     private FutureCallback<?> callback;
     private Exception nextFailure;
 

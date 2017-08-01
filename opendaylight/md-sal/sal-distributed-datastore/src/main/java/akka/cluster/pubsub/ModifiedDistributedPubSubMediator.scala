@@ -6,7 +6,9 @@ import akka.cluster.pubsub.DistributedPubSubMediator.Internal._
 import akka.cluster.pubsub.DistributedPubSubMediator.{Subscribe, Unsubscribe}
 import akka.dispatch.Dispatchers
 import akka.routing.RoutingLogic
-import org.opendaylight.controller.cluster.datastore.CandidateSubmit
+import com.typesafe.config.{Config, ConfigFactory}
+import org.opendaylight.controller.cluster.datastore.CandidatePublisher
+import org.opendaylight.controller.cluster.datastore.messages.{CandidatePayload, CandidateSubmit}
 import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -26,12 +28,11 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
   import cluster.selfAddress
 
   import scala.concurrent.duration._
-  import org.opendaylight.controller.cluster.datastore.messages._
 
 
   override def preStart(): Unit = {
     super.preStart()
-    LOG.info(s"${self.path.toString} starts.")
+    LOG.info(s"CANTEST: ${self.path.toString} starts.")
   }
 
   def extendReceive : Receive = {
@@ -77,8 +78,8 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
     }
   }*/
 
-  class ModifiedTopic(val emptyTimeToLive: FiniteDuration, routingLogic: RoutingLogic) extends TopicLike with PerGroupingBuffer
-                                                                                               with Stash {
+  class ModifiedTopic(val emptyTimeToLive: FiniteDuration, routingLogic: RoutingLogic)
+    extends TopicLike with PerGroupingBuffer with Stash {
 
     //    val LOG: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -87,7 +88,7 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
 
     override def preStart(): Unit = {
       super.preStart()
-      LOG.info(s"${self.path.toString} starts.")
+      LOG.info(s"CANTEST: ${self.path.toString} starts.")
     }
 
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -100,13 +101,13 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
 
     def waitComplete: Receive = {
       case msg@BroadcastCompleted(transactionId, success, fail) =>
-        LOG.debug(s"${self.path.address} waitComplete got message:$msg")
+        LOG.debug(s"CANTEST: ${self.path.address} waitComplete got message:$msg")
         val index = candidateCache.indexWhere(_.transactionId == transactionId)
         candidateCache.drop(index + 1)
 
         success.foreach(indexCache.put(_, transactionId))
 
-        if(fail.nonEmpty) LOG.error(s"${self.path.address}  waitComplete failed lists: {}.", fail.mkString(","))
+        if(fail.nonEmpty) LOG.error(s"CANTEST: ${self.path.address}  waitComplete failed lists: {}.", fail.mkString(","))
 
         context.become(receive)
         unstashAll()
@@ -122,10 +123,11 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
 
     def extendReceive: Receive = {
       case wrapper@CandidateWrapper(transactionId, candidate) =>
-        LOG.debug(s"${self.path.address} extendReceive got message:$wrapper")
+        LOG.info(s"CANTEST: ${self.path.address} extendReceive subscribers=${subscribers}")
 
         candidateCache.enqueue(wrapper)
 
+        // val candidate = payload.getCandidate
         import scala.collection.JavaConversions._
 
         Future.sequence(subscribers.map{s =>
@@ -134,12 +136,12 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
             candidateCache.indexWhere(_.transactionId == indexCache.getOrElse(mkKey(s), 0)) + 1,
             candidateCache.size
           ).toList
-          LOG.info(s"send to ${s.path},size=${candidates.size}")
+          LOG.info(s"CANTEST: send to ${s.path},size=${candidates.size}")
           (s ? CandidateSubmit.create(transactionId, candidates.map(_.candidate)))(1 second).map{_ =>
             (true, mkKey(s))
           }.recover{
             case e: Exception =>
-              LOG.error(s"${self.path.address} " + e.getMessage)
+              LOG.error(s"CANTEST: ${self.path.address} " + e.getMessage)
               e.printStackTrace()
               (false, mkKey(s))
           }
@@ -149,7 +151,7 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
         }.onComplete{
           case Success(_) =>
           case Failure(e) =>
-            LOG.error(s"${self.path.address} onComplete " + e.getMessage)
+            LOG.error(s"CANTEST: ${self.path.address} onComplete " + e.getMessage)
             e.printStackTrace()
         }
         context.become(waitComplete)
@@ -157,7 +159,7 @@ class ModifiedDistributedPubSubMediator(settings: DistributedPubSubSettings) ext
       case Tick =>
         if(indexCache.nonEmpty){
           val targetId = indexCache.values.min
-          LOG.debug(s"${self.path.address} got message: Tick, targetId=$targetId")
+          LOG.debug(s"CANTEST: ${self.path.address} got message: Tick, targetId=$targetId")
           val index = candidateCache.indexWhere(_.transactionId == targetId)
           candidateCache.drop(index + 1)
         }
@@ -220,7 +222,25 @@ object ModifiedDistributedPubSubMediator{
 
 class ModifiedDistributedPubSub(system: ExtendedActorSystem) extends Extension {
 
-  private val settings = DistributedPubSubSettings(system)
+  val LOG: Logger = LoggerFactory.getLogger(this.getClass)
+
+  LOG.info(s"congfig=${system.settings.config}")
+  LOG.info(s"path=${system.settings.config.root().toString}")
+
+  val config: Config = ConfigFactory.parseString(
+    """akka.cluster.pub-sub{
+        name = distributedPubSubMediator
+        role = ""
+        routing-logic = random
+        gossip-interval = 1s
+        removed-time-to-live = 120s
+        max-delta-elements = 3000
+        use-dispatcher = ""
+}""")
+
+  private val settings =
+    DistributedPubSubSettings.apply(config.getConfig("akka.cluster.pub-sub"))
+
 
   def isTerminated: Boolean =
     Cluster(system).isTerminated || !settings.role.forall(Cluster(system).selfRoles.contains)
@@ -229,12 +249,14 @@ class ModifiedDistributedPubSub(system: ExtendedActorSystem) extends Extension {
     if (isTerminated)
       system.deadLetters
     else {
-      val name = system.settings.config.getString("akka.cluster.pub-sub.name")
-      val dispatcher = system.settings.config.getString("akka.cluster.pub-sub.use-dispatcher") match {
+      val name = config.getString("akka.cluster.pub-sub.name")
+      val dispatcher = config.getString("akka.cluster.pub-sub.use-dispatcher") match {
         case "" ⇒ Dispatchers.DefaultDispatcherId
         case id ⇒ id
       }
-      system.systemActorOf(ModifiedDistributedPubSubMediator.props(settings).withDispatcher(dispatcher), name)
+      val mediator = system.systemActorOf(ModifiedDistributedPubSubMediator.props(settings).withDispatcher(dispatcher), name)
+      CandidatePublisher.setMediator(mediator)
+      mediator
     }
   }
 }
@@ -248,5 +270,5 @@ object ModifiedDistributedPubSub extends ExtensionId[ModifiedDistributedPubSub] 
     new ModifiedDistributedPubSub(system)
 }
 
-case class CandidateWrapper(transactionId: Long, candidate: DataTreeCandidate) extends scala.Serializable
-
+// case class CandidateWrapper(transactionId: Long, payload: CandidatePayload) extends scala.Serializable
+case class CandidateWrapper(transactionId: Long,  candidate: DataTreeCandidate) extends scala.Serializable

@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
  * @param <T> registration type
  * @author Robert Varga
  */
-//注册树的节点，可以用来添加、删除孩子，添加删除注册
 public final class RegistrationTreeNode<T> implements Identifiable<PathArgument> {
     private static final Logger LOG = LoggerFactory.getLogger(RegistrationTreeNode.class);
 
@@ -66,7 +65,6 @@ public final class RegistrationTreeNode<T> implements Identifiable<PathArgument>
 
     /**
      * Return a collection children which match a {@link PathArgument} specification inexactly.
-     * 这里的意思是不完全匹配，也就是说，还是应该匹配了一部分的
      * This explicitly excludes the child returned by {@link #getExactChild(PathArgument)}.
      *
      * @param arg Child identifier
@@ -128,7 +126,7 @@ public final class RegistrationTreeNode<T> implements Identifiable<PathArgument>
     private void removeChild(final PathArgument arg) {
         children.remove(arg);
         removeThisIfUnused();
-    }//没有addChild操作
+    }
 
     @Override
     public String toString() {

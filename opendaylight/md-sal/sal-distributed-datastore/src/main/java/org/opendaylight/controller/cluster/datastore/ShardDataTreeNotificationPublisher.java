@@ -15,7 +15,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
  *
  * @author Thomas Pantelis
  */
-//DataTreeChangeListener的接口，生成并发布通知
 interface ShardDataTreeNotificationPublisher {
     long PUBLISH_DELAY_THRESHOLD_IN_MS = TimeUnit.MILLISECONDS.convert(1, TimeUnit.SECONDS);
 

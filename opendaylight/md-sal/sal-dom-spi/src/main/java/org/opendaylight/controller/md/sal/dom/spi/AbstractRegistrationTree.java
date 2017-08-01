@@ -16,12 +16,9 @@ import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier.PathArgum
  * An abstract tree of registrations. Allows a read-only snapshot to be taken.
  *
  * @param <T> Type of registered object
- *///注册树的抽象类,这里的T，在DataChangeListener的注册过程中，是DataChangeListenerRegistration
-    //在DataTreeChangeListener的注册过程中，是AbstractDOMDataTreeChangeListenerRegistration
+ */
 public abstract class AbstractRegistrationTree<T> {
-    //读写锁
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
-    //注册树的根节点
     private final RegistrationTreeNode<T> rootNode = new RegistrationTreeNode<>(null, null);
 
     protected AbstractRegistrationTree() {
@@ -65,7 +62,7 @@ public abstract class AbstractRegistrationTree<T> {
      *
      * @param node Tree node
      * @param registration Registration instance
-     *///
+     */
     protected final void addRegistration(@Nonnull final RegistrationTreeNode<T> node, @Nonnull final T registration) {
         node.addRegistration(registration);
     }

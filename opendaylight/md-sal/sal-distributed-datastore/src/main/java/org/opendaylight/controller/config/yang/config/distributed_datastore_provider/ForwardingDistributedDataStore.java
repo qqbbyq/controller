@@ -22,7 +22,7 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 
 /**
  * DOMStore implementation that forwards to a delegate.
- *实现了向委托转发的DOMStore,所有transaction和registerListener都会向delegate进行转发
+ *
  * @author Thomas Pantelis
  */
 class ForwardingDistributedDataStore extends ForwardingObject implements DistributedDataStoreInterface, AutoCloseable {

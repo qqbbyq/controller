@@ -99,7 +99,6 @@ final class CohortEntry {
     }
 
     void preCommit(final FutureCallback<DataTreeCandidate> callback) {
-        //where give value to candidate 赋值
         cohort.preCommit(callback);
     }
 

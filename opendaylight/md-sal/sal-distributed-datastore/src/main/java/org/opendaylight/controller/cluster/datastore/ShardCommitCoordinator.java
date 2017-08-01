@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 
 /**
  * Coordinates commits for a shard ensuring only one concurrent 3-phase commit.
- * 保证只有一个并发的3次提交
+ *
  * @author Thomas Pantelis
  */
 final class ShardCommitCoordinator {
@@ -187,10 +187,8 @@ final class ShardCommitCoordinator {
      * @param shard the transaction's shard actor
      */
     void handleReadyLocalTransaction(final ReadyLocalTransaction message, final ActorRef sender, final Shard shard) {
-        //创建了一个cort,SimpleShardDataTreeCohort
         final ShardDataTreeCohort cohort = dataTree.createReadyCohort(message.getTransactionID(),
             message.getModification());
-        //创建了一个cohortEntry
         final CohortEntry cohortEntry = CohortEntry.createReady(cohort, DataStoreVersions.CURRENT_VERSION);
         cohortCache.put(cohortEntry.getTransactionID(), cohortEntry);
         cohortEntry.setDoImmediateCommit(message.isDoCommitOnReady());
@@ -236,17 +234,14 @@ final class ShardCommitCoordinator {
     }
 
     private void handleCanCommit(final CohortEntry cohortEntry) {
-        //conCommit(step.1)
         cohortEntry.canCommit(new FutureCallback<Void>() {
             @Override
             public void onSuccess(final Void result) {
                 log.debug("{}: canCommit for {}: success", name, cohortEntry.getTransactionID());
 
                 if (cohortEntry.isDoImmediateCommit()) {
-                    //if isDoImmediateCommit then preCommit(step.2)
                     doCommit(cohortEntry);
                 } else {
-                    //否则，回复一下
                     cohortEntry.getReplySender().tell(
                         CanCommitTransactionReply.yes(cohortEntry.getClientVersion()).toSerializable(),
                         cohortEntry.getShard().self());
@@ -318,7 +313,6 @@ final class ShardCommitCoordinator {
     private void finishCommit(@Nonnull final ActorRef sender, @Nonnull final CohortEntry cohortEntry) {
         log.debug("{}: Finishing commit for transaction {}", persistenceId(), cohortEntry.getTransactionID());
 
-        //step.3 commit
         cohortEntry.commit(new FutureCallback<UnsignedLong>() {
             @Override
             public void onSuccess(final UnsignedLong result) {
@@ -326,7 +320,8 @@ final class ShardCommitCoordinator {
                 log.debug("{}: Transaction {} committed as {}, sending response to {}", persistenceId(), txId, result,
                     sender);
 
-                cohortCache.remove(cohortEntry.getTransactionID());
+                //tmp removed by zhuyuqing: need to be recover
+//                cohortCache.remove(cohortEntry.getTransactionID());
                 sender.tell(CommitTransactionReply.instance(cohortEntry.getClientVersion()).toSerializable(),
                     cohortEntry.getShard().self());
             }
@@ -362,7 +357,6 @@ final class ShardCommitCoordinator {
         }
 
         cohortEntry.setReplySender(sender);
-        //若不是doImmediateCommit
         doCommit(cohortEntry);
     }
 

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>sal-parent</artifactId>
         <groupId>org.opendaylight.controller</groupId>
-        <version>1.4.3-Boron-SR3</version>
+        <version>1.4.4-Boron-SR4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -61,7 +61,7 @@
                             <codeGenerators>
                                 <generator>
                                     <codeGeneratorClass>
-                                      org.opendaylight.org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl
+                                        org.opendaylight.yangtools.maven.sal.api.gen.plugin.CodeGeneratorImpl
                                     </codeGeneratorClass>
                                     <outputBaseDir>${salGeneratorPath}</outputBaseDir>
                                 </generator>

@@ -19,8 +19,6 @@ import org.opendaylight.yangtools.yang.data.api.schema.tree.DataTreeCandidate;
  *
  * @author Thomas Pantelis
  */
-//用于生成和发布数据树通知的actor，用来将代价较大的通知功能从shard Actor中移出来
-
 public class ShardDataTreeNotificationPublisherActor extends AbstractUntypedActor {
     private final Stopwatch timer = Stopwatch.createUnstarted();
     private final String name;

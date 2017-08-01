@@ -40,14 +40,13 @@ public final class DistributedDataStoreClientActor extends AbstractClientActor {
         this.actorContext = Preconditions.checkNotNull(actorContext);
     }
 
-    @Override//定义initialBehavior,在本类中未看到调用，TODO ??
+    @Override
     protected DistributedDataStoreClientBehavior initialBehavior(final ClientActorContext context) {
         return new DistributedDataStoreClientBehavior(context, actorContext);
     }
 
     public static Props props(final @Nonnull MemberName memberName, @Nonnull final String storeName, final ActorContext ctx) {
         final String name = "datastore-" + storeName;
-        //唯一标示不同membername即不同节点上不同clientActor的标识符，全局标示clientActor,
         final FrontendIdentifier frontendId = FrontendIdentifier.create(memberName, FrontendType.forName(name));
         return Props.create(DistributedDataStoreClientActor.class,
             () -> new DistributedDataStoreClientActor(frontendId, ctx));

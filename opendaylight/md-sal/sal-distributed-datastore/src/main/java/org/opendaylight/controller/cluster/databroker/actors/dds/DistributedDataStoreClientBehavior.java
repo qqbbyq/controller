@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  *             - CPU usage provides back-pressure towards the application.
  *
  * @author Robert Varga
- *///实现了DistributedDataStoreClient，在这里收到getClientRequest回复一个client
+ */
 final class DistributedDataStoreClientBehavior extends ClientActorBehavior implements DistributedDataStoreClient {
     private static final Logger LOG = LoggerFactory.getLogger(DistributedDataStoreClientBehavior.class);
 
@@ -106,7 +106,7 @@ final class DistributedDataStoreClientBehavior extends ClientActorBehavior imple
         return null;
     }
 
-    @Override //onCommand方法，在这里若收到getClientRequest则回复client
+    @Override
     protected DistributedDataStoreClientBehavior onCommand(final Object command) {
         if (command instanceof GetClientRequest) {
             ((GetClientRequest) command).getReplyTo().tell(new Status.Success(this), ActorRef.noSender());

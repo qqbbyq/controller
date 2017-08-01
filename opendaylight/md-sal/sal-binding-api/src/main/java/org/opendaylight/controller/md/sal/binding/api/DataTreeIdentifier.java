@@ -48,7 +48,6 @@ public final class DataTreeIdentifier<T extends DataObject> implements Immutable
         return rootIdentifier;
     }
 
-    //判断一个identifier是否包含另一个，判断方式是从头到尾判断PathArgument的type是否相同
     @Override
     public boolean contains(final DataTreeIdentifier<?> other) {
         return datastoreType == other.datastoreType && rootIdentifier.contains(other.rootIdentifier);
