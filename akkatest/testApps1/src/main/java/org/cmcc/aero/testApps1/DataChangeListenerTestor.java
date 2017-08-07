@@ -42,7 +42,7 @@ public class DataChangeListenerTestor implements ClusteredDataChangeListener {
         Map<InstanceIdentifier<?>, DataObject> created = asyncDataChangeEvent.getCreatedData();
         Map<InstanceIdentifier<?>, DataObject> updated = asyncDataChangeEvent.getUpdatedData();
         Set<InstanceIdentifier<?>> deleted = asyncDataChangeEvent.getRemovedPaths();
-        LOG.info("Catty Test: DataChangeListenerTestor get message Fruit DataTreeChanged, created {}," +
+        LOG.info("CANTEST: DataChangeListenerTestor get message Fruit DataTreeChanged, created {}," +
                         "updated {}, delted {}", created.size(), updated.size(), deleted.size());
     }
 }

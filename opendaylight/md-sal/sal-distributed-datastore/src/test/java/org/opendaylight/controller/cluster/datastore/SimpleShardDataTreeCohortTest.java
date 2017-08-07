@@ -115,7 +115,7 @@ public class SimpleShardDataTreeCohortTest extends AbstractTest {
     private DataTreeCandidateTip preCommitSuccess() {
         final DataTreeCandidateTip mockCandidate = mock(DataTreeCandidateTip.class);
         doAnswer(invocation -> {
-            invocation.getArgumentAt(0, SimpleShardDataTreeCohort.class).successfulPreCommit(mockCandidate);
+            invocation.getArgumentAt(0, SimpleShardDataTreeCohort.class).successfulPreCommit(mockCandidate, null);
             return null;
         }).when(mockShardDataTree).startPreCommit(cohort);
 

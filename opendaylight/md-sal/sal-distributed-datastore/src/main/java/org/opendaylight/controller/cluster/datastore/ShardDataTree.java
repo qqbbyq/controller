@@ -567,8 +567,11 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         final SimpleShardDataTreeCohort current = entry.cohort;
         Verify.verify(cohort.equals(current), "Attempted to pre-commit %s while %s is pending", cohort, current);
         final DataTreeCandidateTip candidate;
+        DataTreeCandidate candidateTrim;
         try {
             candidate = dataTree.prepare(cohort.getDataTreeModification());
+            candidateTrim = candidate.trim(cohort.getDataTreeModification());
+
         } catch (Exception e) {
             failPreCommit(e);
             return;
@@ -582,7 +585,7 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
         }
 
         entry.lastAccess = shard.ticker().read();
-        cohort.successfulPreCommit(candidate);
+        cohort.successfulPreCommit(candidate, candidateTrim);
     }
 
     private void failCommit(final Exception cause) {
@@ -610,30 +613,15 @@ public class ShardDataTree extends ShardDataTreeTransactionParent {
 
         // FIXME: propagate journal index
         pendingTransactions.poll().cohort.successfulCommit(UnsignedLong.ZERO);
-        LOG.info("***************************************************************************");
-
-//        LOG.info("{}: Transaction {} committed, proceeding to notify", logContext, txId);
+        LOG.info("{}: Transaction {} committed, proceeding to notify", logContext, txId);
         LOG.info("CANTEST: {} candidate is {}", txId, candidate);
-//        LOG.info("CANTEST: {} candidate.rootPath is {}", txId, candidate.getRootPath());
-//        LOG.info("CANTEST: {} candidateNode is {}", txId, candidate.getRootNode());
-//        LOG.trace("CANTEST: {} candidateNode.identifier is {}", txId, candidate.getRootNode().getIdentifier());
-//        LOG.info("CANTEST: {} candidateNode.childs is {}", txId, candidate.getRootNode().getChildNodes());
-//        LOG.info("CANTEST: {} candidateNode.before is {}", txId, candidate.getRootNode().getDataBefore());
-//        LOG.info("CANTEST: {} candidateNode.after is {}", txId, candidate.getRootNode().getDataAfter());
-        // DataTreeCandidateNode tmp = candidate.getRootNode();
-        // Queue<DataTreeCandidateNode> queue = new LinkedList<>();
-        // queue.offer(tmp);
-        // while( !queue.isEmpty()){
-            // tmp = queue.poll();
-            // tmp.getChildNodes().forEach(queue::offer);
-            // LOG.info("CANTEST1: tmp={}, tmp.childs={}", tmp, tmp.getChildNodes());
-        // }
-        // LOG.info("***************************************************************************");
+        LOG.info("CANTEST: {} candidateTrim is {}", txId, cohort.candidateTrim);
+
         //important removed by zhuyuqing
         // notifyListeners(candidate);
+
 //        added by zhuyuqing
-//        LOG.info("CANTEST: candidate publisher {} proceeding to notify", txId);
-       CandidatePublisher.publish(System.nanoTime(), candidate);
+        CandidatePublisher.publish(System.nanoTime(), cohort.candidateTrim);
         LOG.info("CANTEST: candidate publisher {} done.", txId);
 
         processNextTransaction();

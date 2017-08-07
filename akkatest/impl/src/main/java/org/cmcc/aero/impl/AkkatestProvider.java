@@ -28,7 +28,6 @@ import java.util.Random;
 import java.util.concurrent.Future;
 
 public class AkkatestProvider implements AkkatestService
-//  implements BindingAwareProvider, AutoCloseable
 {
 
     private static final Logger LOG = LoggerFactory.getLogger(AkkatestProvider.class);
@@ -44,27 +43,26 @@ public class AkkatestProvider implements AkkatestService
         HelloWorldOutputBuilder helloBuilder = new HelloWorldOutputBuilder();
         try {
             LOG.info("CANTEST: hello.input={}", input.getName());
+            DataCreator creator = new DataCreator(dataBroker);
+
             if(Objects.equals(input.getName(), "0")){
-                DataCreator creator = new DataCreator(dataBroker);
                 creator.createFruit("apple" + new Random().nextInt());
-
             } else if(Objects.equals(input.getName(), "1")){
-                DataCreator creator = new DataCreator(dataBroker);
                 creator.createAndUpdateFruit();
-
             } else if (Objects.equals(input.getName(), "2")) {
-                DataCreator creator = new DataCreator(dataBroker);
                 creator.createAndDeleteFruit();
-
             }else if(Objects.equals(input.getName(), "3")){
-                DataCreator creator = new DataCreator(dataBroker);
-                creator.createVegetable("tomato" + new Random().nextInt());
+                creator.createVegetable("pepper" + new Random().nextInt());
             } else if(Objects.equals(input.getName(), "4")){
-                DataCreator creator = new DataCreator(dataBroker);
                 creator.createAndModifyFruit();
+            } else if(Objects.equals(input.getName(), "5")){
+                creator.createVegetables();
+            } else if(Objects.equals(input.getName(), "6")){
+                creator.createVegetableSubmit2Food("cabbage" + new Random().nextInt());
+            } else if(Objects.equals(input.getName(), "7")){
+                creator.deleteVegetables();
             }else {
                 LOG.warn("CANTEST: hello.input does not invoke any operation, input={}", input.getName());
-
             }
             helloBuilder.setGreeting("Hello " + input.getName());
             return RpcResultBuilder.success(helloBuilder.build()).buildFuture();
@@ -72,7 +70,6 @@ public class AkkatestProvider implements AkkatestService
         } catch (Exception e){
             LOG.error("CANTEST: error {}", e.getMessage());
             e.printStackTrace();
-
             helloBuilder.setGreeting("ERROR " + input.getName());
             return RpcResultBuilder.success(helloBuilder.build()).buildFuture();
 

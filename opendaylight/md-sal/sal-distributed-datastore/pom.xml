@@ -66,6 +66,11 @@
       <artifactId>akka-testkit_${scala.version}</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.github.romix.akka</groupId>
+      <artifactId>akka-kryo-serialization_2.11</artifactId>
+      <version>0.5.0</version>
+    </dependency>
     <!-- pom added by zhuyuqing on 2017/7/10 -->
     <!--scala-->
     <dependency>
