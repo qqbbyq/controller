@@ -42,6 +42,7 @@
 
     <!-- archetypes -->
     <module>opendaylight/archetypes</module>
+    <module>globalrpc</module>
   </modules>
   <scm>
     <connection>scm:git:http://git.opendaylight.org/gerrit/controller.git</connection>
