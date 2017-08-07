@@ -32,8 +32,8 @@ public class ListentestProvider {
             @Override
             public void run() {
                 try {
-                    LOG.info("Catty Test: testDataBrokerAttributes started");
-                    LOG.info("Catty Test: DataBroker class is {}", dataBroker.getClass());
+                    LOG.info("CANTEST: testDataBrokerAttributes started");
+                    LOG.info("CANTEST: DataBroker class is {}", dataBroker.getClass());
                     Thread.sleep(20000);
                     testRegisterListener();
                 } catch (InterruptedException e) {
@@ -46,7 +46,7 @@ public class ListentestProvider {
     }
 
     private void testRegisterListener() throws InterruptedException {
-        LOG.info("Catty Test: TestDbBroker testRegisterListener.");
+        LOG.info("CANTEST: TestDbBroker testRegisterListener.");
 
         InstanceIdentifier<Fruit> path = InstanceIdentifier.create(Food.class).child(Fruits.class).
           child(Fruit.class);

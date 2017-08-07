@@ -38,6 +38,9 @@ final class SimpleShardDataTreeCohort extends ShardDataTreeCohort implements Ide
 
     private State state = State.READY;
     private DataTreeCandidateTip candidate;
+
+    //added by zhuyuqing
+    public DataTreeCandidate candidateTrim;
     private FutureCallback<?> callback;
     private Exception nextFailure;
 
@@ -163,9 +166,11 @@ final class SimpleShardDataTreeCohort extends ShardDataTreeCohort implements Ide
         userCohorts.preCommit();
     }
 
-    void successfulPreCommit(final DataTreeCandidateTip candidate) {
+    void successfulPreCommit(final DataTreeCandidateTip candidate, DataTreeCandidate candidateTrim) {
         LOG.trace("Transaction {} prepared candidate {}", transaction, candidate);
         this.candidate = Verify.verifyNotNull(candidate);
+        //added by zhuyuqing
+        this.candidateTrim = Verify.verifyNotNull(candidateTrim);
         switchState(State.PRE_COMMIT_COMPLETE).onSuccess(candidate);
     }
 

@@ -14,6 +14,7 @@ import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.Food;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.Fruits;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.Vegetables;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.VegetablesBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.fruits.Fruit;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.fruits.FruitBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.akkatest.rev150105.food.fruits.FruitKey;
@@ -24,6 +25,9 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -60,6 +64,33 @@ public class DataCreator {
         writeTx.submit();
         return fruitKey;
     }
+
+    public void createVegetables(){
+        WriteTransaction writeTx = dataBroker.newWriteOnlyTransaction();
+        writeTx.put(LogicalDatastoreType.CONFIGURATION, InstanceIdentifier.create(Food.class)
+            .child(Vegetables.class), new VegetablesBuilder().setVegetable(Collections.emptyList()).build());
+        writeTx.submit();
+    }
+
+    public void createVegetableSubmit2Food(String name){
+        WriteTransaction writeTx = dataBroker.newWriteOnlyTransaction();
+        VegetableKey vegetableKey = new VegetableKey(name);
+        Vegetable vegetable = new VegetableBuilder().setKey(vegetableKey).setName(name).build();
+        List<Vegetable> v = new ArrayList<>();
+        v.add(vegetable);
+        Vegetables vegetables = new VegetablesBuilder()
+          .setVegetable(v).build();
+        writeTx.merge(LogicalDatastoreType.CONFIGURATION,
+          InstanceIdentifier.create(Food.class).child(Vegetables.class), vegetables);
+        writeTx.submit();
+
+    }
+
+    public void deleteVegetables() throws InterruptedException{
+        ReadWriteTransaction writeTx = dataBroker.newReadWriteTransaction();
+        writeTx.delete(LogicalDatastoreType.CONFIGURATION, InstanceIdentifier.create(Food.class)
+        .child(Vegetables.class));
+        writeTx.submit();    }
 
     public void createAndDeleteFruit() throws InterruptedException{
         FruitKey fruitKey = createFruit("pear" + new Random().nextInt());

@@ -37,20 +37,20 @@ public class DataTreeChangeListenerTestor implements ClusteredDataTreeChangeList
 
     @Override
     public void onDataTreeChanged(Collection<DataTreeModification<Fruit>> collection) {
-        LOG.info("Catty Test: DataTreeChangeListenerTestor get message Networks DataTreeChanged");
+        LOG.info("CANTEST: DataTreeChangeListenerTestor get message Fruits DataTreeChanged");
         for(DataTreeModification<Fruit> networkModification : collection){
             DataObjectModification<Fruit> modification = networkModification.getRootNode();
             DataObjectModification.ModificationType modificationType = modification.getModificationType();
             if(modificationType.equals(DataObjectModification.ModificationType.WRITE)){
                 Fruit after = modification.getDataAfter();
-                LOG.info("Catty Test: DataTreeChangeListenerTestor create network {}", after);
+                LOG.info("CANTEST: DataTreeChangeListenerTestor create fruit {}", after);
             }else if(modificationType.equals(DataObjectModification.ModificationType.DELETE)){
                 Fruit before = modification.getDataBefore();
-                LOG.info("Catty Test: DataTreeChangeListenerTestor delete network {}", before);
+                LOG.info("CANTEST: DataTreeChangeListenerTestor delete fruit {}", before);
             }else if(modificationType.equals(DataObjectModification.ModificationType.SUBTREE_MODIFIED)){
                 Fruit before = modification.getDataBefore();
                 Fruit after = modification.getDataAfter();
-                LOG.info("Catty Test: DataTreeChangeListenerTestor update network, before {}, " +
+                LOG.info("CANTEST: DataTreeChangeListenerTestor update fruit, before {}, " +
                         "after {}", before, after);
             }
         }

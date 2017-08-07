@@ -19,28 +19,14 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <feature version='${mdsal.model.version}'>odl-mdsal-models</feature>
     <bundle>mvn:org.cmcc.aero/akkatest-api/{{VERSION}}</bundle>
   </feature>
-
-
-  <feature name='odl-akkatest-testapps' version='${project.version}' description='OpenDaylight :: akkatest :: testApps'>
-    <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
-    <feature version='${project.version}'>odl-akkatest-api</feature>
-    <bundle>mvn:org.cmcc.aero/akkatest-testapps/{{VERSION}}</bundle>
-  </feature>
-
-  <feature name='odl-akkatest-testapps1' version='${project.version}' description='OpenDaylight :: akkatest :: testApps1'>
-    <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
-    <feature version='${project.version}'>odl-akkatest-api</feature>
-    <bundle>mvn:org.cmcc.aero/akkatest-testapps1/{{VERSION}}</bundle>
-  </feature>
   
   <feature name='odl-akkatest' version='${project.version}' description='OpenDaylight :: akkatest'>
     <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
     <feature version='${project.version}'>odl-akkatest-api</feature>
-    <feature version='${project.version}'>odl-akkatest-testapps</feature>
-    <feature version='${project.version}'>odl-akkatest-testapps1</feature>
     <bundle>mvn:org.cmcc.aero/akkatest-impl/{{VERSION}}</bundle>
+    <bundle>mvn:org.cmcc.aero/akkatest-testapps/{{VERSION}}</bundle>
+    <bundle>mvn:org.cmcc.aero/akkatest-testapps1/{{VERSION}}</bundle>
   </feature>
-
 
   <feature name='odl-akkatest-rest' version='${project.version}' description='OpenDaylight :: akkatest :: REST'>
     <feature version="${project.version}">odl-akkatest</feature>
