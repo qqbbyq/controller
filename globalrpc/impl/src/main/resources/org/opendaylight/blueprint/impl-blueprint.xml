@@ -16,7 +16,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     odl:type="default" />
 
   <bean id="provider"
-    class="org.cmcc.aero.globalrpc.impl.GlobalRpcProvider"
+    class="org.cmcc.aero.impl.GlobalRpcProvider"
     init-method="init" destroy-method="close">
     <argument ref="dataBroker" />
   </bean>

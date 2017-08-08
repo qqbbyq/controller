@@ -1,0 +1,45 @@
+module cluster-rpc {
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:rpc";
+    prefix "cluster-rpc";
+
+    revision "2017-08-01" {
+        description "Initial revision of cluster-rpc model";
+    }
+
+    rpc cluster-rpc {  //新增
+            input {
+                leaf task-id {
+                  type int64;
+                }
+
+                leaf operation {
+                  type string;
+                }
+
+                leaf ip {
+                  type string;
+                }
+
+                leaf timestamp {
+                  type int64;
+                }
+
+                leaf signature {
+                  type string;
+                }
+
+            }
+            output {
+                leaf error-code {
+                  type int64;
+                }
+
+                leaf error-message {
+                  type string;
+                }
+            }
+    }
+
+
+}

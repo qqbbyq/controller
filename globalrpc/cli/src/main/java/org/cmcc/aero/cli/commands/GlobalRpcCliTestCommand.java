@@ -5,12 +5,12 @@
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
-package org.cmcc.aero.globalrpc.cli.commands;
+package org.cmcc.aero.cli.commands;
 
 import org.apache.karaf.shell.commands.Command;
 import org.apache.karaf.shell.commands.Option;
 import org.apache.karaf.shell.console.AbstractAction;
-import org.cmcc.aero.globalrpc.cli.api.GlobalRpcCliCommands;
+import org.cmcc.aero.cli.api.GlobalRpcCliCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
