@@ -15,10 +15,79 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     interface="org.opendaylight.controller.md.sal.binding.api.DataBroker"
     odl:type="default" />
 
-  <bean id="provider"
-    class="org.cmcc.aero.impl.GlobalRpcProvider"
-    init-method="init" destroy-method="close">
+  <bean id="provider" class="org.cmcc.aero.impl.GlobalRpcProvider" init-method="init"
+        destroy-method="close">
     <argument ref="dataBroker" />
   </bean>
 
+  <reference id="entityOwnershipService"
+             interface="org.opendaylight.controller.md.sal.common.api.clustering.EntityOwnershipService"/>
+  <reference id="rpcRegistry" interface="org.opendaylight.controller.sal.binding.api.RpcProviderRegistry"/>
+  <reference id="classLoadingStrategy"
+             interface="org.opendaylight.yangtools.sal.binding.generator.api.ClassLoadingStrategy"/>
+
+  <odl:rpc-service id="salFlowService" interface="org.opendaylight.yang.gen.v1.urn.opendaylight.flow.service.rev130819.SalFlowService"/>
+  <odl:rpc-service id="salGroupService" interface="org.opendaylight.yang.gen.v1.urn.opendaylight.group.service.rev130918.SalGroupService"/>
+  <odl:rpc-service id="salMeterService" interface="org.opendaylight.yang.gen.v1.urn.opendaylight.meter.service.rev130918.SalMeterService"/>
+
+  <bean id="batchFlowService" class="org.opendaylight.openflowplugin.applications.frm.impl.GlobalForwardingServiceImpl"
+        factory-method="createFlowsBatchService">
+    <argument ref="rpcRegistry" />
+    <argument ref="salFlowService" />
+    <argument ref="flowCapableTransactionService" />
+  </bean>
+
+  <bean id="batchGroupService" class="org.cmcc.aero.impl.ofRpcs.impl.OFFwdServiceImpl"
+        factory-method="createGroupsBatchService">
+    <argument ref="rpcRegistry" />
+    <argument ref="salGroupService" />
+    <argument ref="flowCapableTransactionService" />
+  </bean>
+
+  <bean id="batchMeterService" class="org.cmcc.aero.impl.ofRpcs.impl.OFFwdServiceImpl"
+        factory-method="createMetersBatchService">
+    <argument ref="rpcRegistry" />
+    <argument ref="salMeterService" />
+    <argument ref="flowCapableTransactionService" />
+  </bean>
+
+  <bean id="ofOwnerManager" class="org.cmcc.aero.impl.ofRpcs.impl.OFNodeMasterListener">
+    <argument ref="entityOwnershipService" />
+  </bean>
+
+  <bean id="redisSvc" class="org.cmcc.aero.impl.ofRpcs.cache.RedisCacheService"
+        factory-method="createInstance">
+    <argument value="192.168.39.241" />
+    <argument type="java.lang.Integer" value="6379" />
+    <argument value="123456" />
+  </bean>
+
+  <bean id="ofStoreService" class="org.cmcc.aero.impl.ofRpcs.cache.OFStoreService"
+    factory-method="createStoreService">
+    <argument ref="redisSvc" />
+    <argument ref="classLoadingStrategy" />
+  </bean>
+
+  <bean id="globalFlowFwdServiceImpl" class="org.cmcc.aero.impl.ofRpcs.impl.OFFwdServiceImpl"
+        init-method="createInstance">
+    <argument ref="ofOwnerManager"/>
+    <argument ref="ofStoreService" />
+    <argument ref="batchFlowService"/>
+    <argument ref="batchGroupService"/>
+    <argument ref="batchMeterService"/>
+  </bean>
+
+  <bean id="globalFlowRpcService" class="org.cmcc.aero.impl.ofRpcs.impl.GlobalFlowRpcServiceImpl">
+    <argument ref="globalFlowFwdServiceImpl"></argument>
+  </bean>
+
+  <service ref="globalFlowFwdService" interface="org.cmcc.aero.impl.ofRpcs.api.GlobalFlowRpcService"
+           odl:type="aero"/>
+
+  <bean id="testApp" class="org.cmcc.aero.impl.ofRpcs.app.GlobalFlowRpcSvcApp"
+        init-method="init" destroy-method="close">
+    <argument ref="dataBroker" />
+    <argument ref="rpcRegistry" />
+    <argument ref="globalFlowRpcService" />
+  </bean>
 </blueprint>

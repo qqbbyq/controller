@@ -1,3 +1,10 @@
+/*
+ * Copyright © 2017 CMCC and others.  All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.cmcc.aero.impl.rpc;
 
 import akka.actor.ActorRef;
@@ -6,16 +13,19 @@ import akka.actor.Props;
 import akka.dispatch.Futures;
 import akka.dispatch.Recover;
 import akka.pattern.Patterns;
+import akka.pattern.PatternsCS;
 import akka.util.Timeout;
-import org.cmcc.aero.impl.rpc.message.*;
+import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
+import org.cmcc.aero.impl.rpc.message.LocateService;
+import org.cmcc.aero.impl.rpc.message.RegisterService;
+import org.cmcc.aero.impl.rpc.message.RpcTask;
 import org.cmcc.aero.impl.rpc.server.RpcManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Await;
-import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CompletableFuture;
 /**
  * Created by zhuyuqing on 2017/8/4.
  */
@@ -41,8 +51,7 @@ public class GlobalRpcClient {
   public String locate(String serviceName, String serviceType, Object resourceId, Scale scale) {
     try {
       Timeout timeout = new Timeout(Duration.create(5, "seconds"));
-
-      Future<String> future = Patterns.ask(
+      scala.concurrent.Future<String> future = Patterns.ask(
         rpcManager,
         new LocateService(serviceName, serviceType, resourceId, scale),
         timeout).recoverWith(new Recover<scala.concurrent.Future<String>>(){
@@ -58,23 +67,19 @@ public class GlobalRpcClient {
     }
   }
 
-  public Future<GlobalRpcResult> globalCall(String callId, String servicePath, String methodName, Object... parameters){
+  public java.util.concurrent.Future<GlobalRpcResult> globalCall(String callId, String servicePath, String methodName, Object... parameters){
 
     RpcTask task = RpcTask.create(callId, servicePath, methodName, parameters);
     Timeout timeout = new Timeout(Duration.create(10, "seconds"));
 
-    scala.concurrent.Future<GlobalRpcResult> future = Patterns.ask(rpcManager, task, timeout)
-      .recoverWith(new Recover<scala.concurrent.Future<GlobalRpcResult>>() {
-        @Override
-        public scala.concurrent.Future<GlobalRpcResult> recover(Throwable failure) throws Throwable {
-          if (failure instanceof TimeoutException) {
-            return Futures.future(() -> GlobalRpcResult.failure(100101L, failure.getMessage()), actorSystem.dispatcher());
-          } else {
-            return Futures.future(() -> GlobalRpcResult.failure(100100L, failure.getMessage()), actorSystem.dispatcher());
-          }
+    CompletableFuture<GlobalRpcResult> future = PatternsCS.ask(rpcManager, task, timeout)
+      .toCompletableFuture().handle( (result, throwable) -> {
+        if(throwable == null)
+          return (GlobalRpcResult)result;
+        else {
+          return GlobalRpcResult.failure(100100L, throwable.getMessage());
         }
-      },actorSystem.dispatcher());
-
+    });
     return future;
   }
 
