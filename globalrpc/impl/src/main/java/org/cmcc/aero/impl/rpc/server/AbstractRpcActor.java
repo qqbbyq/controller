@@ -9,10 +9,12 @@
 package org.cmcc.aero.impl.rpc.server;
 
 import akka.actor.AbstractActor;
+import akka.actor.UntypedActor;
 import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.MemberRemoved;
 import akka.cluster.ClusterEvent.MemberUp;
 import akka.cluster.ClusterEvent.UnreachableMember;
+import akka.remote.transport.ThrottlerTransportAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 public class AbstractRpcActor extends AbstractActor {
 
-  public Receive extendReceive;
+  public ThrottlerTransportAdapter.Direction.Receive extendReceive;
 
   private Logger LOG = LoggerFactory.getLogger(this.getClass());
 

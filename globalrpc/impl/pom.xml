@@ -10,12 +10,12 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.opendaylight.controller</groupId>
-    <artifactId>config-parent</artifactId>
-    <version>0.5.4-Boron-SR4</version>
-    <relativePath/>
-  </parent>
+  <!--<parent>-->
+    <!--<groupId>org.opendaylight.controller</groupId>-->
+    <!--<artifactId>config-parent</artifactId>-->
+    <!--<version>0.5.4-Boron-SR4</version>-->
+    <!--<relativePath/>-->
+  <!--</parent>-->
 
   <groupId>org.cmcc.aero</groupId>
   <artifactId>globalrpc-impl</artifactId>
@@ -69,8 +69,51 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
       <scope>test</scope>
     </dependency>
 
-    <!-- AKKA -->
+   <!-- &lt;!&ndash; SCALA &ndash;&gt;
     <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>2.11.11</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-reflect</artifactId>
+      <version>2.11.11</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-parser-combinators_2.11</artifactId>
+      <version>1.0.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang.modules</groupId>
+      <artifactId>scala-java8-compat_${scala.version}</artifactId>
+    </dependency>
+
+    &lt;!&ndash; AKKA's dependencies &ndash;&gt;
+    <dependency>
+      <groupId>io.aeron</groupId>
+      <artifactId>aeron-client</artifactId>
+      <version>1.2.5</version>
+    </dependency>
+    <dependency>
+      <groupId>io.aeron</groupId>
+      <artifactId>aeron-driver</artifactId>
+      <version>1.2.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.agrona</groupId>
+      <artifactId>agrona</artifactId>
+      <version>0.9.5</version>
+    </dependency>
+    <dependency>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+-->
+    <!-- AKKA  -->
+   <!-- <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-actor_${scala.version}</artifactId>
       <version>2.5.3</version>
@@ -78,6 +121,21 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-cluster_${scala.version}</artifactId>
+      <version>2.5.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-protobuf_${scala.version}</artifactId>
+      <version>2.5.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe</groupId>
+      <artifactId>ssl-config-core_${scala.version}</artifactId>
+      <version>0.2.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-stream_${scala.version}</artifactId>
       <version>2.5.3</version>
     </dependency>
     <dependency>
@@ -100,14 +158,12 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
       <artifactId>akka-cluster-tools_${scala.version}</artifactId>
       <version>2.5.3</version>
     </dependency>
-
-
-
     <dependency>
-      <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-java8-compat_${scala.version}</artifactId>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-osgi_${scala.version}</artifactId>
+      <version>2.5.3</version>
     </dependency>
-
+-->
     <!-- Testing Dependencies -->
     <dependency>
       <groupId>junit</groupId>
