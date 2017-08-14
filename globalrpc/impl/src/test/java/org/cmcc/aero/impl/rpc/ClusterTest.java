@@ -1,11 +1,3 @@
-/*
- * Copyright © 2017 CMCC and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
 package org.cmcc.aero.impl.rpc;
 
 import akka.actor.ActorRef;
@@ -15,7 +7,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.server.RpcManager;
-import scala.concurrent.Future;
+import org.cmcc.aero.impl.rpc.service.PrintService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,14 +40,10 @@ public class ClusterTest {
 
     Thread.sleep(2000);
     client.updateRpcManager(manager, system);
-    String str = client.locate("PrintService", "PrintService", 1000, GlobalRpcClient.Scale.CLUSTER);
+    java.util.concurrent.Future<String> str = client.locate("PrintService", "PrintService", 1000, GlobalRpcClient.Scale.CLUSTER);
     System.out.println("str:" + str);
 
-    //
-    java.util.concurrent.Future<GlobalRpcResult> r1 = client.globalCall("1", str, "print");
-    while (!r1.isDone()) {
-      Thread.sleep(1000);
-    }
+    java.util.concurrent.Future<GlobalRpcResult> r1 = client.globalCall("1", str.get(), "print");
     GlobalRpcResult r = r1.get();
     System.out.println("Rpc task test done with " + r );
     System.exit(-1);

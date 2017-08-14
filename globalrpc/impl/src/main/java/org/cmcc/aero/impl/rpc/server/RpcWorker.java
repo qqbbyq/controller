@@ -11,7 +11,7 @@ package org.cmcc.aero.impl.rpc.server;
 import akka.actor.*;
 import akka.cluster.Cluster;
 import akka.dispatch.OnComplete;
-import akka.japi.pf.ReceiveBuilder;
+import akka.japi.Procedure;
 import akka.util.Timeout;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.message.RpcTask;
@@ -26,12 +26,13 @@ import java.util.concurrent.TimeUnit;
  * Created by zhuyuqing on 2017/8/1.
  */
 
-public class RpcWorker extends AbstractActor {
+public class RpcWorker extends UntypedActor {
 
   private Logger LOG = LoggerFactory.getLogger(this.getClass());
+
   @Override
-  public Receive createReceive(){
-    return working();
+  public void onReceive(Object message) throws Exception {
+    working.apply(message);
   }
 
   private String selfPath;
@@ -43,19 +44,11 @@ public class RpcWorker extends AbstractActor {
 
   private GlobalRpcResult taskResult;
 
-  @Override
-  public void preStart(){
-    Address clusterAddress = Cluster.get(getContext().system()).selfAddress();
-    selfPath = self().path().toStringWithAddress(clusterAddress);
-    selfName = self().path().name() + "@" + clusterAddress.host().get() + ":" + clusterAddress.port().get();
-
-    LOG.info("{} is started.", selfPath);
-  }
-
-
-  private Receive working(){
-    return new ReceiveBuilder()
-      .match(RpcTask.class, task -> {
+  Procedure<Object> working = new Procedure<Object>() {
+    @Override
+    public void apply(Object message) {
+      if(message instanceof RpcTask) {
+        RpcTask task = (RpcTask) message;
         LOG.info("{} got message: {}", selfName, task);
         client = sender();
         ActorRef self = self();
@@ -70,49 +63,74 @@ public class RpcWorker extends AbstractActor {
               client.tell(taskResult, ActorRef.noSender());
               self.tell(new GoToCompleting(), ActorRef.noSender());
             } else {
-              success.tell(task, self);
+              success.tell(task.updateClientPath(selfPath), self);
             }
           }
-        }, getContext().getSystem().dispatcher());
-        context().become(waiting().onMessage());
-      })
-      .build();
-  }
+        }, getContext().system().dispatcher());
+        getContext().become(waiting);
+        context().setReceiveTimeout(Duration.create(10, TimeUnit.MINUTES));
 
-  private  Receive waiting(){
-    return new ReceiveBuilder()
-      .match(GlobalRpcResult.class, result -> {
+      } else {
+        unhandled(message);
+      }
+    }
+  };
+
+  private Procedure<Object> waiting = new Procedure<Object>() {
+    @Override
+    public void apply(Object message) {
+      if(message instanceof GlobalRpcResult) {
+        GlobalRpcResult result = (GlobalRpcResult) message;
         taskResult = result;
         client.tell(result, ActorRef.noSender());
         //only make sure during one duration, operation is unique, no longer preserve result after that,
         //it means if you submit task with same task id after a duration, your task will be processed
         context().setReceiveTimeout(Duration.create(1, TimeUnit.DAYS));
-        context().become(completing().onMessage());
-      })
-      .match(RpcTask.class, task -> {
+        getContext().become(completing);
+      } else if(message instanceof RpcTask) {
+        RpcTask task = (RpcTask) message;
         sender().tell(
           GlobalRpcResult.failure(
             100303L,
             "task has been submitted but not completed, please try again later to get the taskResult."
           ), ActorRef.noSender());
-      })
-      .match(GoToCompleting.class, c -> {
-        context().become(completing().onMessage());
-      })
-      .build();
+      } else if(message instanceof GoToCompleting) {
+        getContext().become(completing);
+      } else {
+        unhandled(message);
+      }
+
+      /*  .match(ReceiveTimeout.class, r -> {
+        client.tell(GlobalRpcResult.failure(100304L, "got no result, service's node may be crashed"), ActorRef.noSender());
+      })*/
+    }
+  };
+
+  @Override
+  public void preStart(){
+    Address clusterAddress = Cluster.get(getContext().system()).selfAddress();
+    selfPath = self().path().toStringWithAddress(clusterAddress);
+    selfName = self().path().name() + "@" + clusterAddress.host().get() + ":" + clusterAddress.port().get();
+
+    LOG.info("{} is started.", selfPath);
   }
 
-  private  Receive completing(){
-    return new ReceiveBuilder()
-      .match(RpcTask.class, task -> {
-        sender().tell(taskResult, ActorRef.noSender());
-      })
-      .match(ReceiveTimeout.class, t -> {
-        LOG.info("{} got message: {}", selfName, t);
+
+  private Procedure<Object> completing = new Procedure<Object> (){
+
+    @Override
+    public void apply(Object message) {
+      if (message instanceof RpcTask) {
+        sender().tell(taskResult, ActorRef.noSender() );
+      } else if (message instanceof ReceiveTimeout) {
+        LOG.info("{} got message: {}", selfName, message);
         context().stop(self());
-      })
-      .build();
-  }
+      } else {
+        unhandled(message);
+      }
+    }
+
+  };
 
   private static class GoToCompleting {}
 

@@ -8,61 +8,25 @@ terms of the Eclipse Public License v1.0 which accompanies this distribution,
 and is available at http://www.eclipse.org/legal/epl-v10.html
 -->
 <features name="odl-globalrpc-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.2.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.2.0 http://karaf.apache.org/xmlns/features/v1.2.0">
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.2.0 http://karaf.apache.org/xmlns/features/v1.2.0">
   <repository>mvn:org.opendaylight.yangtools/features-yangtools/{{VERSION}}/xml/features</repository>
   <repository>mvn:org.opendaylight.controller/features-mdsal/{{VERSION}}/xml/features</repository>
   <repository>mvn:org.opendaylight.mdsal.model/features-mdsal-model/{{VERSION}}/xml/features</repository>
   <repository>mvn:org.opendaylight.netconf/features-restconf/{{VERSION}}/xml/features</repository>
   <repository>mvn:org.opendaylight.dlux/features-dlux/{{VERSION}}/xml/features</repository>
   <repository>mvn:org.opendaylight.openflowplugin/features-openflowplugin/{{VERSION}}/xml/features</repository>
+  <repository>mvn:org.opendaylight.odlparent/features-akka/{{VERSION}}/xml/features</repository>
+
   <feature name='odl-globalrpc-api' version='${project.version}' description='OpenDaylight :: globalrpc :: api'>
     <feature version='${mdsal.model.version}'>odl-mdsal-models</feature>
     <bundle>mvn:org.cmcc.aero/globalrpc-api/{{VERSION}}</bundle>
   </feature>
-  <feature name="akkarpc-scala" description="Scala Runtime for OpenDaylight" version="${scala.version}">
-    <bundle>mvn:org.scala-lang/scala-library/${scala-lang.version}</bundle>
-    <bundle>mvn:org.scala-lang/scala-reflect/${scala-lang.version}</bundle>
-    <bundle>mvn:org.scala-lang.modules/scala-parser-combinators_${scala.version}/${combinators.version}</bundle>
-    <bundle>mvn:org.scala-lang.modules/scala-java8-compat_${scala.version}/${scala.java8.compat.version}</bundle>
-  </feature>
-  <feature name="akkarpc-system" description="Akka Actor Framework System Bundles" version="${akkarpc.version}">
-    <feature version="${scala.version}">akkarpc-scala</feature>
-    <bundle>mvn:com.typesafe/config/${config.version}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-actor_${scala.version}/{{VERSION}}</bundle>
-    <!--<bundle>mvn:com.typesafe.akka/akka-protobuf_${scala.version}/{{VERSION}}</bundle>-->
-  </feature>
-  <feature name="akkarpc-clustering" description="Akka Clustering" version="${akkarpc.version}">
-    <feature version="${akkarpc.version}">akkarpc-system</feature>
-    <bundle>wrap:mvn:org.uncommons.maths/uncommons-maths/${uncommons-maths.version}</bundle>
-    <bundle>mvn:com.typesafe/ssl-config-core_${scala.version}/{{VERSION}}</bundle>
-    <bundle>mvn:org.reactivestreams/reactive-streams/${reactivestreams.version}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-stream_${scala.version}/{{VERSION}}</bundle>
-    <bundle>mvn:org.agrona/agrona/${agrona.version}</bundle>
-    <bundle>mvn:io.aeron/aeron-client/${aeron.version}</bundle>
-    <bundle>mvn:io.aeron/aeron-driver/${aeron.version}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-protobuf_${scala.version}/2.5.3</bundle>
-    <bundle>mvn:io.netty/netty/${netty.version}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-remote_${scala.version}/{{VERSION}}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-cluster_${scala.version}/{{VERSION}}</bundle>
-  </feature>
-  <feature name="akkarpc-leveldb" description="LevelDB" version="${leveldb.version}">
-    <bundle>wrap:mvn:org.iq80.leveldb/leveldb/{{VERSION}}</bundle>
-    <bundle>mvn:org.fusesource.leveldbjni/leveldbjni-all/${leveldbjni.version}</bundle>
-  </feature>
-  <feature name="akkarpc-persistence" description="Akka Persistence" version="${akkarpc.version}">
-    <feature version="${leveldb.version}">akkarpc-leveldb</feature>
-    <feature version="${akkarpc.version}">akkarpc-system</feature>
-    <bundle>mvn:com.typesafe.akka/akka-persistence_${scala.version}/{{VERSION}}</bundle>
-  </feature>
   <feature name="akkarpc" version="${akkarpc.version}" description="OpenDaylight :: globalrpc :: akka">
-    <feature version="${akkarpc.version}">akkarpc-system</feature>
-    <feature version="${akkarpc.version}">akkarpc-clustering</feature>
-    <feature version="${leveldb.version}">akkarpc-leveldb</feature>
-    <feature version="${akkarpc.version}">akkarpc-persistence</feature>
-    <bundle>mvn:com.typesafe.akka/akka-actor_${scala.version}/{{VERSION}}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-osgi_${scala.version}/{{VERSION}}</bundle>
-    <bundle>mvn:com.typesafe.akka/akka-slf4j_${scala.version}/{{VERSION}}</bundle>
+    <feature version='[2.4.1,2.5.0)'>odl-akka-system</feature>
+    <feature version='[2.4.1,2.5.0)'>odl-akka-persistence</feature>
+    <feature version='[2.4.1,2.5.0)'>odl-akka-clustering</feature>
+    <bundle>mvn:com.typesafe.akka/akka-cluster-tools_${scala.version}/{{VERSION}}</bundle>
   </feature>
   <feature name="odl-globalrpc-impl" version="${project.version}" description="OpenDaylight :: globalrpc :: IMPL">
     <feature version="${mdsal.version}">odl-mdsal-broker</feature>

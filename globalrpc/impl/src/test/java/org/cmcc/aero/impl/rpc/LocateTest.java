@@ -1,12 +1,9 @@
-/*
- * Copyright © 2017 CMCC and others.  All rights reserved.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License v1.0 which accompanies this distribution,
- * and is available at http://www.eclipse.org/legal/epl-v10.html
- */
-
 package org.cmcc.aero.impl.rpc;
+
+import org.cmcc.aero.impl.rpc.service.PrintService;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Created by zhuyuqing on 2017/8/8.
@@ -14,13 +11,13 @@ package org.cmcc.aero.impl.rpc;
 
 public class LocateTest {
 
-  public static void main(String[] args){
+  public static void main(String[] args) throws ExecutionException, InterruptedException {
     GlobalRpcClient client = GlobalRpcClient.getInstance();
     client.register(new PrintService(), "PrintService", "PrintService");
-    String str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL);
+    Future<String> str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL);
 
 
-    System.out.println("Locate test done with " + str );
+    System.out.println("Locate test done with " + str.get() );
     System.exit(-1);
   }
 }

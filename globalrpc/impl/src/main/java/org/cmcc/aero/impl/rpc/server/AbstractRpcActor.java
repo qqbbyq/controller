@@ -8,13 +8,13 @@
 
 package org.cmcc.aero.impl.rpc.server;
 
-import akka.actor.AbstractActor;
 import akka.actor.UntypedActor;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
 import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.MemberRemoved;
 import akka.cluster.ClusterEvent.MemberUp;
 import akka.cluster.ClusterEvent.UnreachableMember;
-import akka.remote.transport.ThrottlerTransportAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,33 +22,42 @@ import org.slf4j.LoggerFactory;
  * Created by zhuyuqing on 2017/8/7.
  */
 
-public class AbstractRpcActor extends AbstractActor {
+public abstract class AbstractRpcActor extends UntypedActor {
 
-  public ThrottlerTransportAdapter.Direction.Receive extendReceive;
+
+  public abstract void extendReceive(Object message);
 
   private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
 
-
-  Receive baseReceive() {
-    return receiveBuilder()
-      .match(MemberUp.class, mUp -> {
-        LOG.info("Member is Up: {}", mUp.member());
-      })
-      .match(UnreachableMember.class, mUnreachable -> {
-        LOG.info("Member detected as unreachable: {}", mUnreachable.member());
-      })
-      .match(MemberRemoved.class, mRemoved -> {
-        LOG.info("Member is Removed: {}", mRemoved.member());
-      })
-      .match(MemberEvent.class, message -> {
-        //ignore
-      })
-      .build();
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    Cluster.get(getContext().system()).subscribe(getSelf(), ClusterEvent.initialStateAsEvents(),
+      MemberEvent.class, UnreachableMember.class);
   }
 
   @Override
-  public Receive createReceive() {
-    return baseReceive();
+  public void onReceive(Object message) throws Exception {
+    if (!baseReceive(message)) {
+      extendReceive(message);
+    }
+  }
+
+  private boolean baseReceive(Object message) {
+    if (message instanceof MemberUp) {
+      LOG.info("Member is Up: {}", ((MemberUp) message).member());
+      return true;
+    } else if (message instanceof UnreachableMember) {
+      LOG.warn("Member detected as unreachable: {}", ((UnreachableMember) message).member());
+      return true;
+    } else if (message instanceof MemberRemoved) {
+      LOG.warn("Member is Removed: {}", ((MemberRemoved) message).member());
+      return true;
+    } else if (message instanceof MemberEvent) {
+      //ignore
+      return true;
+    }
+    return false;
   }
 }

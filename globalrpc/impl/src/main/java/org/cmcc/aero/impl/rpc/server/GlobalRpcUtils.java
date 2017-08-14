@@ -42,7 +42,7 @@ public class GlobalRpcUtils {
       Method method = clz.getMethod(methodName, types.toArray(parameterTypes));
       Object res = method.invoke(rpcSvc, parameters);
       GlobalRpcResult r;
-      if(res instanceof java.util.concurrent.Future) {
+      if(res instanceof Future) {
         try {
           r = GlobalRpcResult.success(((Future) res).get(10, TimeUnit.SECONDS));
         }  catch (Exception e){

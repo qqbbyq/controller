@@ -8,6 +8,7 @@
 
 package org.cmcc.aero.impl.rpc.message;
 
+import org.cmcc.aero.impl.rpc.protocol.Event;
 import org.cmcc.aero.impl.rpc.protocol.RemoteProtocol;
 
 import java.util.Arrays;
@@ -16,7 +17,7 @@ import java.util.Arrays;
  * Created by zhuyuqing on 2017/8/1.
  */
 
-public class RpcTask implements RemoteProtocol {
+public class RpcTask implements RemoteProtocol, Event {
 
   private static final long serialVersionUID = 1L;
 
@@ -28,6 +29,8 @@ public class RpcTask implements RemoteProtocol {
 
   private Object[] parameters;
 
+  private String clientPath = "";
+
   private RpcTask(String id,
                   String address,
                   String methodName,
@@ -38,6 +41,7 @@ public class RpcTask implements RemoteProtocol {
     this.parameters = parameters;
   }
 
+  @Override
   public String getTaskId() {
     return this.taskId;
   }
@@ -62,6 +66,15 @@ public class RpcTask implements RemoteProtocol {
     return new RpcTask(taskId, path, methodName, parameters);
   }
 
+  public RpcTask updateClientPath(String clientPath) {
+    this.clientPath = clientPath;
+    return this;
+  }
+
+  public String getClientPath() {
+    return this.clientPath;
+  }
+
   @Override
   public String toString(){
     return "RpcTask(" +
@@ -72,6 +85,8 @@ public class RpcTask implements RemoteProtocol {
       methodName +
       "," +
       Arrays.toString(parameters) +
+      "," +
+      clientPath +
       ")";
   }
 
