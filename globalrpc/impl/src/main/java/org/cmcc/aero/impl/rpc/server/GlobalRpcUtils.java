@@ -8,6 +8,7 @@
 
 package org.cmcc.aero.impl.rpc.server;
 
+import com.google.common.util.concurrent.AbstractFuture;
 import org.cmcc.aero.impl.rpc.GlobalRpcIntf;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.slf4j.Logger;
@@ -29,34 +30,36 @@ public class GlobalRpcUtils {
 
   public static GlobalRpcResult invoke(GlobalRpcIntf rpcSvc, String methodName, Object[] parameters) {
     try {
-      Class<?> clz = rpcSvc.getClass();
-      List<Class<?>> types = new ArrayList<>();
-      Class<?>[] parameterTypes = new Class<?>[]{};
-
-      if (parameters != null) {
-        for (Object para : parameters) {
-          types.add(para.getClass());
-        }
-      }
-
-      Method method = clz.getMethod(methodName, types.toArray(parameterTypes));
+      Method method = getValidMethod(rpcSvc, methodName, parameters);
       Object res = method.invoke(rpcSvc, parameters);
       GlobalRpcResult r;
-      if(res instanceof Future) {
+      if(res instanceof java.util.concurrent.Future) {
         try {
           r = GlobalRpcResult.success(((Future) res).get(10, TimeUnit.SECONDS));
         }  catch (Exception e){
-          LOG.error("GlobalRpcUtils invoke {} method {} parameters {} future wait error:{}",
+          LOG.error("GlobalRpcUtils invoke {} method {} parameters {} java future wait error:{}",
             rpcSvc.getClass(),
             methodName,
             parameters,
             e.getMessage());
           r = GlobalRpcResult.failure(100201L, e.getMessage());
         }
+      } else if (AbstractFuture.class.isAssignableFrom(res.getClass())) {
+        try {
+          AbstractFuture future = (AbstractFuture) res;
+          r = GlobalRpcResult.success(future.get(10, TimeUnit.SECONDS));
+        } catch (Exception e) {
+          LOG.error("GlobalRpcUtils invoke {} method {} parameters {} google future wait error:{}",
+            rpcSvc.getClass(),
+            methodName,
+            parameters,
+            e.getMessage());
+          r = GlobalRpcResult.failure(100202L, e.getMessage());
+        }
       } else {
         r = GlobalRpcResult.success(res);
       }
-
+      LOG.info("invoke service={}, method={}, parameter.length={}, result={}", rpcSvc, methodName, parameters.length, r);
       return r;
 
     } catch (Exception e) {
@@ -64,9 +67,31 @@ public class GlobalRpcUtils {
         rpcSvc.getClass(),
         methodName,
         parameters,
-        e.getMessage());
+        e.getMessage(),e);
       return GlobalRpcResult.failure(100200L, e.getMessage());
     }
+  }
+
+  private static Method getValidMethod(GlobalRpcIntf rpcSvc, String methodName, Object[] parameters) throws
+          NoSuchMethodException{
+    Class<?> clz = rpcSvc.getClass();
+    for(Method method : clz.getMethods()){
+      if(! method.getName().equals(methodName))
+        continue;
+      if(method.getParameterCount() != parameters.length)
+        continue;
+      Class<?>[] parameterTypes =  method.getParameterTypes();
+      int i=0;
+      for(i=0; i< parameters.length; i++){
+        Class<?> paraType = parameterTypes[i];
+        if(! (paraType.isAssignableFrom(parameters[i].getClass())))
+          break;
+      }
+      if(i == parameters.length)
+        return method;
+    }
+    String erroMsg = String.format("No method %s found with parameters %s", methodName, parameters.toString());
+    throw new NoSuchMethodException(erroMsg);
   }
 
 

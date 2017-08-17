@@ -1,8 +1,14 @@
+/*
+ * Copyright © 2017 CMCC and others.  All rights reserved.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v1.0 which accompanies this distribution,
+ * and is available at http://www.eclipse.org/legal/epl-v10.html
+ */
+
 package org.cmcc.aero.impl.rpc;
 
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
-import org.cmcc.aero.impl.rpc.service.PrintService;
-
 import java.util.concurrent.Future;
 
 import java.util.concurrent.ExecutionException;
@@ -15,13 +21,16 @@ import java.util.concurrent.ExecutionException;
 public class RpcTaskTest {
 
   public static void main(String[] args) throws InterruptedException, ExecutionException {
-    GlobalRpcClient client = GlobalRpcClient.getInstance();
+    GlobalRpcClient client = GlobalRpcClient.getTmpInstance();
     client.register(new PrintService(), "PrintService", "PrintService");
-    Future<String> str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL);
+    String str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL);
 
-    java.util.concurrent.Future<GlobalRpcResult> r1 = client.globalCall("1", str.get(), "printFuture");
+    java.util.concurrent.Future<GlobalRpcResult> r1 = client.globalCall("1", str, "printFuture");
+    while (!r1.isDone()) {
+      Thread.sleep(1000);
+    }
     GlobalRpcResult r = r1.get();
-    System.out.println("Rpc task test done with " + r.toString() );
+    System.out.println("Rpc task test done with " + r );
     System.exit(-1);
   }
 }

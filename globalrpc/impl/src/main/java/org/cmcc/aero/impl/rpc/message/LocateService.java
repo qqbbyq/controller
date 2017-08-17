@@ -47,8 +47,8 @@ public class LocateService implements RemoteProtocol {
       "," +
       serviceType +
       "," +
-      resourceId +
-      "," +
+//      resourceId +
+//      "," +
       scale +
       "," +
       requestAddress +

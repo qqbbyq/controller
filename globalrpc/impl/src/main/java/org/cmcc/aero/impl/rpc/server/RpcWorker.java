@@ -49,26 +49,39 @@ public class RpcWorker extends UntypedActor {
     public void apply(Object message) {
       if(message instanceof RpcTask) {
         RpcTask task = (RpcTask) message;
-        LOG.info("{} got message: {}", selfName, task);
-        client = sender();
-        ActorRef self = self();
-        ActorSelection selection = getContext().actorSelection(task.getServicePath());
-        Future<ActorRef> future = selection.resolveOne(timeout);
-        future.onComplete(new OnComplete<ActorRef>() {
-          @Override
-          public void onComplete(Throwable failure, ActorRef success) throws Throwable {
-            if(failure != null) {
-              LOG.error("{} got service actor error: {}", selfName, failure.getMessage());
-              taskResult = GlobalRpcResult.failure(100301L, failure.getMessage());
-              client.tell(taskResult, ActorRef.noSender());
-              self.tell(new GoToCompleting(), ActorRef.noSender());
-            } else {
-              success.tell(task.updateClientPath(selfPath), self);
-            }
-          }
-        }, getContext().system().dispatcher());
-        getContext().become(waiting);
-        context().setReceiveTimeout(Duration.create(10, TimeUnit.MINUTES));
+        LOG.info("{} got message 19: {}", selfName, task);
+
+        try {
+          client = sender();
+          ActorRef self = self();
+          ActorSelection selection = getContext().actorSelection(task.getServicePath());
+          selection.tell(task, self);
+
+//        Future<ActorRef> future = selection.resolveOne(timeout);
+//        future.onComplete(new OnComplete<ActorRef>() {
+//          @Override
+//          public void onComplete(Throwable failure, ActorRef success) throws Throwable {
+//            if(failure != null) {
+//              LOG.error("{} got service actor error: {}", selfName, failure.getMessage());
+//              taskResult = GlobalRpcResult.failure(100301L, failure.getMessage());
+//              client.tell(taskResult, ActorRef.noSender());
+//              self.tell(new GoToCompleting(), ActorRef.noSender());
+//            } else {
+//              LOG.info("{} got service actor: {}", selfName, success.path());
+//              getContext().actorSelection(success.path()).tell(task, self);
+//            }
+//          }
+//        }, getContext().system().dispatcher());
+          getContext().become(waiting);
+
+        } catch (Exception e) {
+          LOG.error("working RpcTask error {}", e.getMessage());
+          e.printStackTrace();
+          sender().tell( GlobalRpcResult.failure(
+            100304L,
+            "error send task to selection servicePath."
+          ), ActorRef.noSender());
+        }
 
       } else {
         unhandled(message);
@@ -79,6 +92,8 @@ public class RpcWorker extends UntypedActor {
   private Procedure<Object> waiting = new Procedure<Object>() {
     @Override
     public void apply(Object message) {
+      LOG.info("{} waiting got message: {}", selfName, message);
+
       if(message instanceof GlobalRpcResult) {
         GlobalRpcResult result = (GlobalRpcResult) message;
         taskResult = result;
@@ -99,10 +114,6 @@ public class RpcWorker extends UntypedActor {
       } else {
         unhandled(message);
       }
-
-      /*  .match(ReceiveTimeout.class, r -> {
-        client.tell(GlobalRpcResult.failure(100304L, "got no result, service's node may be crashed"), ActorRef.noSender());
-      })*/
     }
   };
 

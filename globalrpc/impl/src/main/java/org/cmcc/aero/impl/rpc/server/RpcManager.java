@@ -37,9 +37,7 @@ public class RpcManager extends AbstractRpcActor {
   private String shortPath; ///user/rpcManager
 
   @Override
-  public void preStart() throws Exception {
-    super.preStart();
-
+  public void preStart() {
     mediator = DistributedPubSub.get(getContext().system()).mediator();
     mediator.tell(new DistributedPubSubMediator.Put(self()), self());
 
@@ -87,7 +85,7 @@ public class RpcManager extends AbstractRpcActor {
         LOG.debug("{} service ready to send to mediator: {}", selfName, mediator);
         mediator.tell(new DistributedPubSubMediator.SendToAll(
           shortPath, loct.setRequestAddress(
-          selfPath), true
+          selfName), true
         ), sender());
       }
 
