@@ -1,0 +1,45 @@
+module globalrpctest{
+    yang-version 1;
+    namespace "urn:aero:yang:globalrpctest";
+    prefix "globalrpctest";
+
+    revision "2017-08-01" {
+        description "Initial revision of globalrpc model";
+    }
+    rpc get-local-ofnodes {
+        output {
+            leaf-list ofnodes {
+                type string;
+            }
+        }
+    }
+
+    rpc write-flows {
+        input {
+            leaf nodeId{
+                type string;
+            }
+        }
+        output {
+            leaf flow {
+                type string;
+            }
+        }
+    }
+
+    rpc get-flow {
+        input {
+            leaf nodeId{
+                type string;
+            }
+            leaf flowId{
+                type string;
+            }
+        }
+        output {
+            leaf flow_str {
+                type string;
+            }
+        }
+    }
+}
