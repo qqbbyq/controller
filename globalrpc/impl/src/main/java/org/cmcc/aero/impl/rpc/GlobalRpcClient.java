@@ -23,6 +23,7 @@ import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.message.LocateService;
 import org.cmcc.aero.impl.rpc.message.RegisterService;
 import org.cmcc.aero.impl.rpc.message.RpcTask;
+import org.cmcc.aero.impl.rpc.server.GlobalRpcUtils;
 import org.cmcc.aero.impl.rpc.server.RpcManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -100,14 +101,14 @@ public class GlobalRpcClient {
 
   public java.util.concurrent.Future<GlobalRpcResult> globalCall(String callId, String servicePath, String methodName, Object... parameters){
 
-    RpcTask task = RpcTask.create(callId, servicePath, methodName, parameters);
+    RpcTask task = RpcTask.create(callId, servicePath, methodName, GlobalRpcUtils.toSerialize(parameters));
     LOG.info("globalcall method={}, callId={}, path={}, parameter.length={}", methodName, callId, servicePath, parameters.length);
     Timeout timeout = new Timeout(Duration.create(20, "seconds"));
 
     CompletableFuture<GlobalRpcResult> future = PatternsCS.ask(rpcManager, task, timeout)
       .toCompletableFuture().handle( (result, throwable) -> {
         if(throwable == null)
-          return (GlobalRpcResult)result;
+          return (GlobalRpcResult) result;
         else {
           LOG.error("globalcall recover error: {}", throwable.getMessage());
           throwable.printStackTrace();

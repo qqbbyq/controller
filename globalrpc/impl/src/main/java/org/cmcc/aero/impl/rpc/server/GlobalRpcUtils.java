@@ -11,12 +11,18 @@ package org.cmcc.aero.impl.rpc.server;
 import com.google.common.util.concurrent.AbstractFuture;
 import org.cmcc.aero.impl.rpc.GlobalRpcIntf;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
+import org.opendaylight.controller.cluster.datastore.node.utils.serialization.NormalizedNodeSerializer;
+import org.opendaylight.controller.cluster.datastore.utils.NormalizedNodeAggregator;
+import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
+import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.AttributeList;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -30,6 +36,7 @@ public class GlobalRpcUtils {
 
   public static GlobalRpcResult invoke(GlobalRpcIntf rpcSvc, String methodName, Object[] parameters) {
     try {
+      parameters = fromSerialized(parameters);
       Method method = getValidMethod(rpcSvc, methodName, parameters);
       Object res = method.invoke(rpcSvc, parameters);
       GlobalRpcResult r;
@@ -44,19 +51,7 @@ public class GlobalRpcUtils {
             e.getMessage());
           r = GlobalRpcResult.failure(100201L, e.getMessage());
         }
-      } else if (AbstractFuture.class.isAssignableFrom(res.getClass())) {
-        try {
-          AbstractFuture future = (AbstractFuture) res;
-          r = GlobalRpcResult.success(future.get(10, TimeUnit.SECONDS));
-        } catch (Exception e) {
-          LOG.error("GlobalRpcUtils invoke {} method {} parameters {} google future wait error:{}",
-            rpcSvc.getClass(),
-            methodName,
-            parameters,
-            e.getMessage());
-          r = GlobalRpcResult.failure(100202L, e.getMessage());
-        }
-      } else {
+      }  else {
         r = GlobalRpcResult.success(res);
       }
       LOG.info("invoke service={}, method={}, parameter.length={}, result={}", rpcSvc, methodName, parameters.length, r);
@@ -94,5 +89,28 @@ public class GlobalRpcUtils {
     throw new NoSuchMethodException(erroMsg);
   }
 
+
+  public static Object[] toSerialize(Object[] parameters) {
+    List<Object> serialParas = new ArrayList<>();
+    for(Object parameter: parameters) {
+      if(parameter instanceof NormalizedNode) {
+        serialParas.add(NormalizedNodeSerializer.serialize((NormalizedNode) parameter));
+      } else {
+        serialParas.add(parameter);
+      }
+    }
+    return serialParas.toArray();
+  }
+
+  private static Object[] fromSerialized(Object[] parameters) {
+    List<Object> paras = new ArrayList<>();
+    for(Object parameter: parameters)
+    if(parameter instanceof NormalizedNodeMessages.Node) {
+      paras.add(NormalizedNodeSerializer.deSerialize((NormalizedNodeMessages.Node) parameter));
+    } else {
+      paras.add(parameter);
+    }
+    return paras.toArray();
+  }
 
 }

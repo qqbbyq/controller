@@ -7,11 +7,11 @@
  */
 package org.cmcc.aero.impl.ofRpcs.api;
 
-import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.*;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.AddFlowsBatchOutput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.RemoveFlowsBatchOutput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.UpdateFlowsBatchOutput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.*;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.*;
-
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
@@ -30,7 +30,7 @@ public interface OFFwdService{
                                                                       NormalizedNode normalNode);
 
     public Future<RpcResult<AddFlowsBatchOutput>> addFlowsBatch(YangInstanceIdentifier nodeYangId,
-                                                                NormalizedNodeMessages.Node normalNode);
+                                                                NormalizedNode normalNode);
 
     public Future<RpcResult<RemoveMetersBatchOutput>> removeMetersBatch(RemoveMetersBatchInput input);
 

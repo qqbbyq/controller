@@ -13,10 +13,10 @@ import org.cmcc.aero.impl.ofRpcs.api.GlobalFlowRpcService;
 import org.cmcc.aero.impl.ofRpcs.cache.OFStoreService;
 import org.cmcc.aero.impl.rpc.GlobalRpcClient;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
-import org.opendaylight.controller.cluster.datastore.node.utils.serialization.NormalizedNodeSerializer;
-import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.AddGroupsBatchInput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.RemoveGroupsBatchInput;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.UpdateGroupsBatchInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.add.groups.batch.input.BatchAddGroups;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.batch.group.input.update.grouping.OriginalBatchedGroup;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.batch.group.input.update.grouping.UpdatedBatchedGroup;
@@ -24,9 +24,7 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.re
 import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.update.groups.batch.input.BatchUpdateGroups;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.AddMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.RemoveGroupsBatchInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.RemoveMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.UpdateGroupsBatchInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.UpdateMetersBatchInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.add.meters.batch.input.BatchAddMeters;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.batch.meter.input.update.grouping.OriginalBatchedMeter;
@@ -42,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.cmcc.aero.impl.utils.ConstantsUtils.SPLITOR;
 
@@ -119,11 +117,10 @@ public class GlobalFlowRpcServiceImpl implements GlobalFlowRpcService {
             String resourecePath = locateOFNode(nodeIid);
             String transactionId = generateTxId();
 
-            NormalizedNodeMessages.Node serializeNode = NormalizedNodeSerializer.serialize(normalizedNode.getValue());
             // Only for test, not use globalcall
 //            delegateSvc.addFlowsBatch(normalizedNode.getKey(), normalizedNode.getValue());
             return globalRpcClient.globalCall(transactionId, resourecePath, "addFlowsBatch", normalizedNode.getKey(),
-              serializeNode);
+              normalizedNode.getValue());
         }else{
             LOG.error("Error wile make node and flows normalized");
             return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,

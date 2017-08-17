@@ -13,8 +13,6 @@ import com.google.common.util.concurrent.SettableFuture;
 import org.cmcc.aero.impl.ofRpcs.OfRpcUtils;
 import org.cmcc.aero.impl.ofRpcs.api.OFFwdService;
 import org.cmcc.aero.impl.rpc.GlobalRpcIntf;
-import org.opendaylight.controller.cluster.datastore.node.utils.serialization.NormalizedNodeSerializer;
-import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
 import org.opendaylight.controller.sal.binding.api.RpcProviderRegistry;
 import org.opendaylight.openflowplugin.impl.services.SalFlowsBatchServiceImpl;
 import org.opendaylight.openflowplugin.impl.services.SalGroupsBatchServiceImpl;
@@ -191,8 +189,7 @@ public class OFFwdServiceImpl implements OFFwdService, GlobalRpcIntf {
 
     @Override
     public Future<RpcResult<AddFlowsBatchOutput>> addFlowsBatch(YangInstanceIdentifier nodeYangId,
-                                                                NormalizedNodeMessages.Node serializedNormalNode) {
-        NormalizedNode<?,?> normalNode = NormalizedNodeSerializer.deSerialize(serializedNormalNode);
+                                                                NormalizedNode normalNode) {
         Map.Entry<InstanceIdentifier, List> nodeFlowEntry = ofRpcUtils.getNodeFlowMap(nodeYangId, normalNode);
 
         if(nodeFlowEntry != null){
