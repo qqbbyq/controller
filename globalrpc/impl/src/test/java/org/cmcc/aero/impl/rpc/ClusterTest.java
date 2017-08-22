@@ -15,7 +15,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.server.RpcManager;
-import scala.concurrent.Future;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class ClusterTest {
 
     Thread.sleep(2000);
     client.updateRpcManager(manager, system);
-    String str = client.locate("PrintService", "PrintService", 1000, GlobalRpcClient.Scale.CLUSTER);
+    String str = client.locate("PrintService", "PrintService", 1000, GlobalRpcClient.Scale.CLUSTER).get();
     System.out.println("str:" + str);
 
     //

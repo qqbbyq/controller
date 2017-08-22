@@ -10,15 +10,7 @@ package org.cmcc.aero.impl.ofRpcs.app;
 import com.google.common.collect.Lists;
 import org.cmcc.aero.impl.ofRpcs.api.GlobalFlowRpcService;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GetFlowInput;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GetFlowOutput;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GetFlowOutputBuilder;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GetLocalOfnodesOutput;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GetLocalOfnodesOutputBuilder;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.GlobalrpctestService;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.WriteFlowsInput;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.WriteFlowsOutput;
-import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.WriteFlowsOutputBuilder;
+import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.*;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.OutputActionCaseBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.output.action._case.OutputActionBuilder;
@@ -96,6 +88,16 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
     }
 
     @Override
+    public Future<RpcResult<BulkWriteFlowsOutput>> bulkWriteFlows(BulkWriteFlowsInput input) {
+        String nodeId = input.getNodeId();
+        Integer num = input.getNumber();
+        String flowStr = bulkLaunchFlowEntries(nodeId, num);
+        BulkWriteFlowsOutputBuilder outputBuilder = new BulkWriteFlowsOutputBuilder();
+        outputBuilder.setFlow(flowStr);
+        return RpcResultBuilder.success(outputBuilder.build()).buildFuture();
+    }
+
+    @Override
     public Future<RpcResult<WriteFlowsOutput>> writeFlows(WriteFlowsInput input) {
         String nodeId = input.getNodeId();
         String flowStr = launchFlowEntries(nodeId);
@@ -150,6 +152,9 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
         String dstIp = basicIpStr + "/32";
         int outPort = generateRandomOfPort();
         int priority = generateRandomPriority();
+        Flow flow = generateDstIpRule(dpid, tableId, priority, dstIp, outPort);
+        NodeBuilder nodeBuilder = createNodeBuilder(dpid);
+
         long afterGenData = System.nanoTime();
         long genDataCost = TimeUnit.NANOSECONDS.toMicros(afterGenData - startGenData);
 
@@ -157,13 +162,55 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
                 basicIpStr, priority, outPort, dpid);
 
         long beforeWrite = System.nanoTime();
-        writeDstIpRule(dpid, tableId, priority, dstIp, outPort);
+        writeFlowDirect(Lists.newArrayList(flow), nodeBuilder);
 
         long afterWrite = System.nanoTime();
         long writeDataCost = TimeUnit.NANOSECONDS.toMicros(afterWrite - beforeWrite);
 
         return String.format("%s generate openflow data cost %d us, write openflow cost %d us",
                 this.getClass().getSimpleName(), genDataCost, writeDataCost);
+    }
+
+    private String bulkLaunchFlowEntries(String ofNodeID, Integer number){
+        LOG.info("bulk Launch openflows on node {}.", ofNodeID);
+        long startGenData = System.nanoTime();
+
+        short[] tableIds = new short[number];
+        String[] dstIps = new String[number];
+        int[] outPorts = new int[number];
+        int[] priorities = new int[number];
+
+        Long dpid = parseDPID(ofNodeID);
+        String basicIpStr;
+
+        for (int i = 0; i < number; ++i ) {
+            tableIds[i] = generateRandomTableId();
+            basicIpStr = generateRandomIPStr();
+            dstIps[i] = generateRandomIPStr() + "/32";
+            outPorts[i] = generateRandomOfPort();
+            priorities[i] = generateRandomPriority();
+            LOG.info("bulk Generate openflow cfg: tableID-{}, IP_Start-{},priority-{},output:port-{}, dpids-{}", tableIds[i],
+              basicIpStr, priorities[i], outPorts[i], dpid);
+
+        }
+        List<Flow> flows = new ArrayList<>();
+        NodeBuilder nodeBuilder = createNodeBuilder(dpid);
+
+        for(int i = 0; i < number; ++i ) {
+            flows.add(generateDstIpRule(dpid, tableIds[i], priorities[i], dstIps[i], outPorts[i]));
+        }
+
+        long afterGenData = System.nanoTime();
+        long genDataCost = TimeUnit.NANOSECONDS.toMicros(afterGenData - startGenData);
+        long beforeWrite = System.nanoTime();
+
+        writeFlowDirect(flows, nodeBuilder);
+
+        long afterWrite = System.nanoTime();
+        long writeDataCost = TimeUnit.NANOSECONDS.toMicros(afterWrite - beforeWrite);
+
+        return String.format("%s bulk generate openflow data size %d,  cost %d us, bulk write openflow cost %d us",
+          this.getClass().getSimpleName(), number, genDataCost, writeDataCost);
     }
 
     private Long parseDPID(String ofNodeID) {
@@ -250,8 +297,7 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
         return ib;
     }
 
-    public void writeDstIpRule(Long dpidLong, short tableId, int priority, String dstIp, long outPort) {
-        NodeBuilder nodeBuilder = createNodeBuilder(dpidLong);
+    public Flow generateDstIpRule(Long dpidLong, short tableId, int priority, String dstIp, long outPort) {
         FlowBuilder flowBuilder = new FlowBuilder();
         String flowName = "TableID_" + tableId + "_DstIP_" + dstIp + "_Output_" + outPort;
         initFlowBuilder(flowBuilder, flowName, tableId).setPriority(priority);
@@ -277,8 +323,40 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
 
         // Add InstructionsBuilder to FlowBuilder
         flowBuilder.setInstructions(isb.build());
-        writeFlowDirect(flowBuilder, nodeBuilder);
+        return flowBuilder.build();
     }
+
+   /*public void writeDstIpRule(Long dpidLong, short tableId, int priority, String dstIp, long outPort) {
+        FlowBuilder flowBuilder = new FlowBuilder();
+        NodeBuilder nodeBuilder = createNodeBuilder(dpidLong);
+
+        String flowName = "TableID_" + tableId + "_DstIP_" + dstIp + "_Output_" + outPort;
+        initFlowBuilder(flowBuilder, flowName, tableId).setPriority(priority);
+        MatchBuilder matchBuilder = new MatchBuilder();
+        createDstL3IPv4Match(matchBuilder, new Ipv4Prefix(dstIp));
+        flowBuilder.setMatch(matchBuilder.build());
+
+        // Create the OF Actions and Instructions
+        InstructionBuilder ib = new InstructionBuilder();
+        InstructionsBuilder isb = new InstructionsBuilder();
+
+        // Instructions List Stores Individual Instructions
+        List<Instruction> instructions = Lists.newArrayList();
+
+        // Call the InstructionBuilder Methods Containing Actions
+        createOutputPortInstructions(ib, dpidLong, outPort);
+        ib.setOrder(0);
+        ib.setKey(new InstructionKey(0));
+        instructions.add(ib.build());
+
+        // Add InstructionBuilder to the Instruction(s)Builder List
+        isb.setInstruction(instructions);
+
+        // Add InstructionsBuilder to FlowBuilder
+        flowBuilder.setInstructions(isb.build());
+
+        writeFlowDirect(Lists.newArrayList(flowBuilder.build()), nodeBuilder);
+    }*/
 
     private InstanceIdentifier<Flow> createFlowIid(Flow flow, InstanceIdentifier<Node> nodeIid) {
         return nodeIid.builder()
@@ -288,10 +366,10 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
                 .build();
     }
 
-    private void writeFlowDirect(final FlowBuilder flowBuilder, final NodeBuilder nodeBuilder){
+    private void writeFlowDirect(final List<Flow> flows, final NodeBuilder nodeBuilder){
         LOG.debug("writeFlowDirect is called");
         LOG.debug("writeFlow on MasterNode");
-        Future<GlobalRpcResult> r = this.flowRpcService.addFlowsBatch(nodeBuilder.getId().getValue(),Lists.newArrayList(flowBuilder.build()));
+        Future<GlobalRpcResult> r = this.flowRpcService.addFlowsBatch(nodeBuilder.getId().getValue(), flows);
 
         try {
             LOG.info("writeFlow res={}", r.get());

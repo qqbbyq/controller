@@ -9,20 +9,12 @@
 package org.cmcc.aero.impl.ofRpcs.api;
 
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.meters.Meter;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.AddFlowsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.RemoveFlowsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.UpdateFlowsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.AddGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.RemoveGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.UpdateGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.AddMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.RemoveMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.UpdateMetersBatchInput;
-import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.group.types.rev131018.groups.Group;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
@@ -34,13 +26,13 @@ public interface GlobalFlowRpcService{
 
     public Future<GlobalRpcResult> removeFlowsBatch(String nodeId, List<Flow> flows);
 
-    public Future<GlobalRpcResult> removeMetersBatch(RemoveMetersBatchInput input);
+    public Future<GlobalRpcResult> removeMetersBatch(String nodeId, List<Meter> meters);
 
-    public Future<GlobalRpcResult> addMetersBatch(AddMetersBatchInput input);
+    public Future<GlobalRpcResult> addMetersBatch(String nodeId, List<Meter> meters);
 
-    public Future<GlobalRpcResult> addGroupsBatch(AddGroupsBatchInput input);
+    public Future<GlobalRpcResult> addGroupsBatch(String nodeId, List<Group> groups);
 
-    public Future<GlobalRpcResult> updateGroupsBatch(UpdateGroupsBatchInput input);
+    public Future<GlobalRpcResult> removeGroupsBatch(String nodeId, List<Group> groups);
 
     public void close();
 

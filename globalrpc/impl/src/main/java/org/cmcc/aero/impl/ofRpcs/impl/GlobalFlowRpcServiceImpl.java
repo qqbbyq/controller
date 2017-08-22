@@ -13,24 +13,10 @@ import org.cmcc.aero.impl.ofRpcs.api.GlobalFlowRpcService;
 import org.cmcc.aero.impl.ofRpcs.cache.OFStoreService;
 import org.cmcc.aero.impl.rpc.GlobalRpcClient;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.meters.Meter;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.inventory.rev130819.tables.table.Flow;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.AddGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.RemoveGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.UpdateGroupsBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.add.groups.batch.input.BatchAddGroups;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.batch.group.input.update.grouping.OriginalBatchedGroup;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.batch.group.input.update.grouping.UpdatedBatchedGroup;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.remove.groups.batch.input.BatchRemoveGroups;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.update.groups.batch.input.BatchUpdateGroups;
+import org.opendaylight.yang.gen.v1.urn.opendaylight.group.types.rev131018.groups.Group;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.AddMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.RemoveMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.UpdateMetersBatchInput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.add.meters.batch.input.BatchAddMeters;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.batch.meter.input.update.grouping.OriginalBatchedMeter;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.batch.meter.input.update.grouping.UpdatedBatchedMeter;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.remove.meters.batch.input.BatchRemoveMeters;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.update.meters.batch.input.BatchUpdateMeters;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
@@ -70,23 +56,40 @@ public class GlobalFlowRpcServiceImpl implements GlobalFlowRpcService {
         globalRpcClient.register(delegateSvc, ofFwdServiceName, ofFwdServiceName);
     }
 
-    private String locateOFNode(InstanceIdentifier<Node> nodeIdent){
-        return globalRpcClient.locate(delegateSvc.getServiceName(), delegateSvc.getServiceName(), nodeIdent,
+    private CompletableFuture<String> locateOFNode(InstanceIdentifier<Node> nodeIdent){
+        return  (CompletableFuture<String>) globalRpcClient.locate(delegateSvc.getServiceName(), delegateSvc.getServiceName(), nodeIdent,
                 GlobalRpcClient.Scale.CLUSTER);
     }
 
-    public Future<GlobalRpcResult> removeFlowsBatch(String nodeId, List<Flow> flows){
-
+    public Future<GlobalRpcResult> removeFlowsBatch(String nodeId, List<Flow> flows) {
         Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeFlowNodeNormal(nodeId, flows);
         if(normalizedNode!=null){
-            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
-            String resourecePath = locateOFNode(nodeIid);
-            String transactionId = generateTxId();
-            Future<GlobalRpcResult> future = globalRpcClient.globalCall(transactionId, resourecePath,
-                    "removeFlowsBatch", normalizedNode.getKey(), normalizedNode.getValue());
 
+            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
+            String transactionId = generateTxId();
+
+            CompletableFuture<GlobalRpcResult> completableFuture = locateOFNode(nodeIid)
+              .thenCompose(path ->
+                (CompletableFuture <GlobalRpcResult>)globalRpcClient.globalCall(transactionId, path,
+              "removeFlowsBatch", normalizedNode.getKey(), normalizedNode.getValue())
+              );
+
+            /*
+            Future<String> resourecePath = locateOFNode(nodeIid);
+
+            CompletableFuture<GlobalRpcResult> completableFuture = new CompletableFuture();
+            ((CompletableFuture)resourecePath).thenApply(new Consumer<String>() {
+                @Override
+                public void accept(String resourecePath1) {
+
+                    Future<GlobalRpcResult> future = globalRpcClient.globalCall(transactionId, resourecePath1,
+                      "removeFlowsBatch", normalizedNode.getKey(), normalizedNode.getValue());
+                    ((CompletableFuture)future).thenAccept(rpcResult -> completableFuture.complete(rpcResult));
+
+                }
+            });*/
             removeFlowsFromCache(nodeIid, flows);
-            return future;
+            return completableFuture;
         }else{
             LOG.error("Error wile make node and flows normalized");
             return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
@@ -109,18 +112,20 @@ public class GlobalFlowRpcServiceImpl implements GlobalFlowRpcService {
         return String.valueOf(this.getClass().getSimpleName()) + "-" + txLong.incrementAndGet();
     }
 
-    public Future<GlobalRpcResult> addFlowsBatch(String nodeId, List<Flow> flows){
+    public Future<GlobalRpcResult> addFlowsBatch(String nodeId, List<Flow> flows) {
         Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeFlowNodeNormal(nodeId, flows);
         if(normalizedNode!= null){
             InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
             addFlows2Cache(nodeIid, flows);
-            String resourecePath = locateOFNode(nodeIid);
             String transactionId = generateTxId();
 
             // Only for test, not use globalcall
 //            delegateSvc.addFlowsBatch(normalizedNode.getKey(), normalizedNode.getValue());
-            return globalRpcClient.globalCall(transactionId, resourecePath, "addFlowsBatch", normalizedNode.getKey(),
-              normalizedNode.getValue());
+            return locateOFNode(nodeIid).thenCompose(resourcePath ->
+              (CompletableFuture<GlobalRpcResult>)
+                globalRpcClient.globalCall(transactionId, resourcePath, "addFlowsBatch", normalizedNode.getKey(),
+                normalizedNode.getValue())
+            );
         }else{
             LOG.error("Error wile make node and flows normalized");
             return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
@@ -136,110 +141,114 @@ public class GlobalFlowRpcServiceImpl implements GlobalFlowRpcService {
         }
     }
 
-    public Future<GlobalRpcResult> removeMetersBatch(RemoveMetersBatchInput input) {
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        Future<GlobalRpcResult> future = globalRpcClient.globalCall(transactionId, resourecePath,
-                "removeMetersBatch", input);
-        removeMetersFromCache(input);
-        return future;
+    public Future<GlobalRpcResult> removeMetersBatch(String nodeId, List<Meter> meters) {
+        Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeMeterNodeNormal(nodeId,
+                meters);
+        if(normalizedNode!=null){
+            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
+            String transactionId = generateTxId();
+
+            removeMetersFromCache(nodeIid, meters);
+
+            return locateOFNode(nodeIid).thenCompose(path ->
+              (CompletableFuture<GlobalRpcResult>) globalRpcClient.globalCall(transactionId, (String)path,
+                "removeMetersBatch", normalizedNode.getKey(), normalizedNode.getValue())
+            );
+        } else {
+            LOG.error("Error wile make node and flows normalized");
+            return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
+                    "Error wile make node and flows normalized"));
+        }
     }
 
-    private void removeMetersFromCache(RemoveMetersBatchInput input) {
-        InstanceIdentifier targetNode = input.getNode().getValue();
+    private void removeMetersFromCache(InstanceIdentifier targetNode, List<Meter> meters) {
         List<Long> removedMeterIds = Lists.newArrayList();
-        for(BatchRemoveMeters batchMeter : input.getBatchRemoveMeters()){
+        for(Meter batchMeter : meters){
             Long meterId = batchMeter.getMeterId().getValue();
             removedMeterIds.add(meterId);
         }
         cacheService.batchRemoveMeters(targetNode, removedMeterIds);
     }
 
-    public Future<GlobalRpcResult> updateMetersBatch(UpdateMetersBatchInput input) {
-        updateMetersFromCache(input);
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        return globalRpcClient.globalCall(transactionId, resourecePath, "updateMetersBatch", input);
-    }
-
-    private void updateMetersFromCache(UpdateMetersBatchInput input) {
-        InstanceIdentifier targetNode = input.getNode().getValue();
-        for(BatchUpdateMeters batchedMeters : input.getBatchUpdateMeters()){
-            OriginalBatchedMeter originalMeter = batchedMeters.getOriginalBatchedMeter();
-            Long meterId = originalMeter.getMeterId().getValue();
-            UpdatedBatchedMeter updatedMeter = batchedMeters.getUpdatedBatchedMeter();
-            cacheService.addMeter(targetNode, meterId, updatedMeter);
+    public Future<GlobalRpcResult>  addMetersBatch(String nodeId, List<Meter> meters) {
+        Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeMeterNodeNormal(nodeId,
+                meters);
+        if(normalizedNode !=null){
+            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
+            addMeters2Cache(nodeIid, meters);
+            String transactionId = generateTxId();
+            Future<GlobalRpcResult> completableFuture = locateOFNode(nodeIid).thenCompose(resourcePath ->
+              (CompletableFuture<GlobalRpcResult>) globalRpcClient.globalCall(transactionId, (String) resourcePath, "addMetersBatch",
+                normalizedNode.getKey(), normalizedNode.getValue())
+            );
+            return  completableFuture;
+        }else {
+            LOG.error("Error wile make node and flows normalized");
+            return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
+                    "Error wile make node and flows normalized"));
         }
     }
 
-    public Future<GlobalRpcResult>  addMetersBatch(AddMetersBatchInput input) {
-        addMeters2Cache(input);
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        return globalRpcClient.globalCall(transactionId, resourecePath, "addMetersBatch", input);
-    }
-
-    private void addMeters2Cache(AddMetersBatchInput input) {
-        InstanceIdentifier nodeIdent = input.getNode().getValue();
-        for(BatchAddMeters meter : input.getBatchAddMeters()){
+    private void addMeters2Cache(InstanceIdentifier nodeIdent, List<Meter> meters) {
+        for(Meter meter : meters){
             Long meterId = meter.getMeterId().getValue();
             cacheService.addMeter(nodeIdent, meterId, meter);
         }
     }
 
-    public Future<GlobalRpcResult> addGroupsBatch(AddGroupsBatchInput input) {
-        addGroups2Cache(input);
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        return globalRpcClient.globalCall(transactionId, resourecePath, "addGroupsBatch", input);
+    public Future<GlobalRpcResult> addGroupsBatch(String nodeId, List<Group> groups) {
+        Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeGroupNodeNormal(nodeId,
+                groups);
+        if(normalizedNode!=null){
+            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
+            addGroups2Cache(nodeIid, groups);
+            String transactionId = generateTxId();
+
+            return locateOFNode(nodeIid).thenCompose(resourcePath ->
+              (CompletableFuture<GlobalRpcResult>)globalRpcClient.globalCall(transactionId, (String) resourcePath, "addGroupsBatch",
+                normalizedNode.getKey(), normalizedNode.getValue())
+            );
+        } else {
+            LOG.error("Error wile make node and flows normalized");
+            return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
+                    "Error wile make node and flows normalized"));
+        }
     }
 
-    private void addGroups2Cache(AddGroupsBatchInput input) {
-        InstanceIdentifier node = input.getNode().getValue();
-        for(BatchAddGroups batchGroups : input.getBatchAddGroups()){
+    private void addGroups2Cache(InstanceIdentifier node, List<Group> groups) {
+        for(Group batchGroups : groups ){
             Long groupId = batchGroups.getGroupId().getValue();
             cacheService.addGroup(node, groupId, batchGroups);
         }
     }
 
-    public Future<GlobalRpcResult>  removeGroupsBatch(RemoveGroupsBatchInput input) {
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        Future<GlobalRpcResult> future = globalRpcClient.globalCall(transactionId, resourecePath, "removeGroupsBatch", input);
-        removeGroupsFromCache(input);
-        return future;
+    public Future<GlobalRpcResult> removeGroupsBatch(String nodeId, List<Group> groups) {
+        Map.Entry<YangInstanceIdentifier, NormalizedNode<?,?>> normalizedNode = ofRpcUtils.makeGroupNodeNormal(nodeId,
+                groups);
+        if(normalizedNode!=null){
+            InstanceIdentifier<Node> nodeIid = ofRpcUtils.createNodeId(nodeId);
+            String transactionId = generateTxId();
+
+            CompletableFuture<GlobalRpcResult> future = locateOFNode(nodeIid).thenCompose(resourcePath ->
+              (CompletableFuture<GlobalRpcResult>)globalRpcClient.globalCall(transactionId, resourcePath,
+              "removeGroupsBatch", normalizedNode.getKey(), normalizedNode.getValue())
+            );
+            removeGroupsFromCache(nodeIid, groups);
+
+            return future;
+        }else {
+            LOG.error("Error wile make node and flows normalized");
+            return CompletableFuture.completedFuture(GlobalRpcResult.failure(503,
+                    "Error wile make node and flows normalized"));
+        }
     }
 
-    private void removeGroupsFromCache(RemoveGroupsBatchInput input) {
-        InstanceIdentifier targetNode = input.getNode().getValue();
+    private void removeGroupsFromCache(InstanceIdentifier targetNode, List<Group> groups) {
         List<Long> removedGroupIds = Lists.newArrayList();
-        for(BatchRemoveGroups batchedGroups : input.getBatchRemoveGroups()){
-            removedGroupIds.add(batchedGroups.getGroupId().getValue());
+        for(Group group : groups){
+            removedGroupIds.add(group.getGroupId().getValue());
         }
         cacheService.batchRemovceGroups(targetNode, removedGroupIds);
-    }
-
-    public Future<GlobalRpcResult>  updateGroupsBatch(UpdateGroupsBatchInput input) {
-        updateGroupsFromCache(input);
-        InstanceIdentifier nodeIid = input.getNode().getValue();
-        String resourecePath = locateOFNode(nodeIid);
-        String transactionId = generateTxId();
-        return globalRpcClient.globalCall(transactionId, resourecePath, "updateGroupsBatch", input);
-    }
-
-    private void updateGroupsFromCache(UpdateGroupsBatchInput input) {
-        InstanceIdentifier targetNode = input.getNode().getValue();
-        for(BatchUpdateGroups batchedGroups : input.getBatchUpdateGroups()){
-            OriginalBatchedGroup originalGroup = batchedGroups.getOriginalBatchedGroup();
-            Long groupId = originalGroup.getGroupId().getValue();
-            UpdatedBatchedGroup updatedGroup = batchedGroups.getUpdatedBatchedGroup();
-            cacheService.addGroup(targetNode, groupId, updatedGroup);
-        }
     }
 
     @Override

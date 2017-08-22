@@ -80,6 +80,10 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
     <argument ref="nodeNormalizedUtils" />
   </bean>
 
+  <bean id="ofNoCacheService" class="org.cmcc.aero.impl.ofRpcs.cache.OFNoCacheImpl"
+        factory-method="createStoreService">
+  </bean>
+
   <bean id="ofRpcUtils" class="org.cmcc.aero.impl.ofRpcs.OfRpcUtils">
     <argument ref="nodeNormalizedUtils" />
   </bean>
@@ -96,7 +100,7 @@ and is available at http://www.eclipse.org/legal/epl-v10.html
   <bean id="globalFlowRpcService" class="org.cmcc.aero.impl.ofRpcs.impl.GlobalFlowRpcServiceImpl">
     <argument ref="globalFlowFwdServiceImpl"/>
     <argument ref="globalRpcClient"/>
-    <argument ref="ofStoreService" />
+    <argument ref="ofNoCacheService" />
     <argument ref="ofRpcUtils" />
   </bean>
 

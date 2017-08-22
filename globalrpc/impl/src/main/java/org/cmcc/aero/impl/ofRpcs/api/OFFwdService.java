@@ -7,11 +7,10 @@
  */
 package org.cmcc.aero.impl.ofRpcs.api;
 
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.AddFlowsBatchOutput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.RemoveFlowsBatchOutput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.UpdateFlowsBatchOutput;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.groups.service.rev160315.*;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.meters.service.rev160316.*;
+import org.cmcc.aero.impl.ofRpcs.serialize.BatchFlowResults;
+import org.cmcc.aero.impl.ofRpcs.serialize.BatchGroupResults;
+import org.cmcc.aero.impl.ofRpcs.serialize.BatchMeterResults;
+
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
@@ -24,25 +23,40 @@ import java.util.concurrent.Future;
  */
 public interface OFFwdService{
 
-    public Future<RpcResult<RemoveFlowsBatchOutput>> removeFlowsBatch(YangInstanceIdentifier path, NormalizedNode node);
+    public Future<RpcResult<BatchFlowResults>> removeFlowsBatch(YangInstanceIdentifier path, NormalizedNode node);
 
-    public Future<RpcResult<UpdateFlowsBatchOutput>> updateFlowsBatch(YangInstanceIdentifier nodeYangId,
-                                                                      NormalizedNode normalNode);
+    public Future<RpcResult<BatchFlowResults>> removeFlowsBatch(YangInstanceIdentifier path,
+                                                                NormalizedNode node, boolean isBarrierAfter);
 
-    public Future<RpcResult<AddFlowsBatchOutput>> addFlowsBatch(YangInstanceIdentifier nodeYangId,
-                                                                NormalizedNode normalNode);
+    public Future<RpcResult<BatchFlowResults>> addFlowsBatch(YangInstanceIdentifier nodeYangId,
+                                                             NormalizedNode normalNode);
 
-    public Future<RpcResult<RemoveMetersBatchOutput>> removeMetersBatch(RemoveMetersBatchInput input);
+    public Future<RpcResult<BatchFlowResults>> addFlowsBatch(YangInstanceIdentifier nodeYangId,
+                                                             NormalizedNode normalNode, boolean isBarrierAfter);
 
-    public Future<RpcResult<UpdateMetersBatchOutput>> updateMetersBatch(UpdateMetersBatchInput input);
+    public Future<RpcResult<BatchMeterResults>> removeMetersBatch(YangInstanceIdentifier nodeYangId,
+                                                                  NormalizedNode normalNode);
 
-    public Future<RpcResult<AddMetersBatchOutput>> addMetersBatch(AddMetersBatchInput input);
+    public Future<RpcResult<BatchMeterResults>> removeMetersBatch(YangInstanceIdentifier nodeYangId,
+                                                                  NormalizedNode normalNode, boolean isBarrierAfter);
 
-    public Future<RpcResult<AddGroupsBatchOutput>> addGroupsBatch(AddGroupsBatchInput input);
+    public Future<RpcResult<BatchMeterResults>> addMetersBatch(YangInstanceIdentifier nodeYangId,
+                                                               NormalizedNode normalNode);
 
-    public Future<RpcResult<RemoveGroupsBatchOutput>> removeGroupsBatch(RemoveGroupsBatchInput input);
+    public Future<RpcResult<BatchMeterResults>> addMetersBatch(YangInstanceIdentifier nodeYangId,
+                                                               NormalizedNode normalNode, boolean isBarrierAfter);
 
-    public Future<RpcResult<UpdateGroupsBatchOutput>> updateGroupsBatch(UpdateGroupsBatchInput input);
+    public Future<RpcResult<BatchGroupResults>> addGroupsBatch(YangInstanceIdentifier nodeYangId,
+                                                               NormalizedNode normalNode);
+
+    public Future<RpcResult<BatchGroupResults>> addGroupsBatch(YangInstanceIdentifier nodeYangId,
+                                                               NormalizedNode normalNode, boolean isBarrierAfter);
+
+    public Future<RpcResult<BatchGroupResults>> removeGroupsBatch(YangInstanceIdentifier nodeYangId,
+                                                                  NormalizedNode normalNode);
+
+    public Future<RpcResult<BatchGroupResults>> removeGroupsBatch(YangInstanceIdentifier nodeYangId,
+                                                                  NormalizedNode normalNode, boolean isBarrierAfter);
 
     public void close();
 

@@ -24,6 +24,10 @@ import java.util.List;
 public class OFNoCacheImpl implements OFStoreService {
     private Logger LOG = LoggerFactory.getLogger(OFStoreServiceImpl.class);
 
+    public static OFNoCacheImpl createStoreService() {
+       return new OFNoCacheImpl();
+    }
+
     @Override
     public void batchRemoveFlows(InstanceIdentifier nodeId, List<String> removeFlowIds) {
         LOG.info("OFNoCacheImpl.batchRemoveFlows is called, nothing to do.");

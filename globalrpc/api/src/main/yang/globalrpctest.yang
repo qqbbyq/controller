@@ -27,6 +27,25 @@ module globalrpctest{
         }
     }
 
+      rpc bulk-write-flows {
+            input {
+                leaf nodeId{
+                    type string;
+                }
+
+                leaf number{
+                    type int32;
+                }
+
+
+            }
+            output {
+                leaf flow {
+                    type string;
+                }
+            }
+        }
+
     rpc get-flow {
         input {
             leaf nodeId{

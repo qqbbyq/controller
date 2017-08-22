@@ -79,25 +79,43 @@ public class GlobalRpcClient {
     rpcManager.tell(new RegisterService(service, serviceName, serviceType), ActorRef.noSender());
   }
 
-  // auto invoke service.isResourceLocal()
-  public String locate(String serviceName, String serviceType, Object resourceId, Scale scale) {
-    try {
-      Timeout timeout = new Timeout(Duration.create(5, "seconds"));
-      scala.concurrent.Future<String> future = Patterns.ask(
-        rpcManager,
-        new LocateService(serviceName, serviceType, resourceId, scale),
-        timeout).recoverWith(new Recover<scala.concurrent.Future<String>>(){
-          @Override
-          public scala.concurrent.Future<String> recover(Throwable failure) throws Throwable {
-            return Futures.future(() -> "", actorSystem.dispatcher());
-          }
-      }, actorSystem.dispatcher());
-      return Await.result(future, timeout.duration());
-    } catch (Exception e){
-      LOG.error("locate await Error:{}", e.getMessage());
-      return "";
-    }
+  public java.util.concurrent.Future<String> locate(String serviceName, String serviceType, Object resourceId, Scale scale) {
+    Timeout timeout = new Timeout(Duration.create(5, "seconds"));
+    CompletableFuture<String> future = PatternsCS.ask(
+      rpcManager,
+      new LocateService(serviceName, serviceType, resourceId, scale),
+      timeout).toCompletableFuture().handle((result, throwable) -> {
+        if (throwable == null)
+          return (String) result;
+        else {
+          LOG.error("locate await error: {}", throwable.getMessage());
+          throwable.printStackTrace();
+          return "";
+        }
+      }
+    );
+    return future;
   }
+
+  // auto invoke service.isResourceLocal()
+//  public String locate(String serviceName, String serviceType, Object resourceId, Scale scale) {
+//    try {
+//      Timeout timeout = new Timeout(Duration.create(5, "seconds"));
+//      scala.concurrent.Future<String> future = Patterns.ask(
+//        rpcManager,
+//        new LocateService(serviceName, serviceType, resourceId, scale),
+//        timeout).recoverWith(new Recover<scala.concurrent.Future<String>>(){
+//          @Override
+//          public scala.concurrent.Future<String> recover(Throwable failure) throws Throwable {
+//            return Futures.future(() -> "", actorSystem.dispatcher());
+//          }
+//      }, actorSystem.dispatcher());
+//      return Await.result(future, timeout.duration());
+//    } catch (Exception e){
+//      LOG.error("locate await Error:{}", e.getMessage());
+//      return "";
+//    }
+//  }
 
   public java.util.concurrent.Future<GlobalRpcResult> globalCall(String callId, String servicePath, String methodName, Object... parameters){
 

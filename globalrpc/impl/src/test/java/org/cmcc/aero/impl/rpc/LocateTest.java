@@ -8,16 +8,18 @@
 
 package org.cmcc.aero.impl.rpc;
 
+import java.util.concurrent.ExecutionException;
+
 /**
  * Created by zhuyuqing on 2017/8/8.
  */
 
 public class LocateTest {
 
-  public static void main(String[] args){
+  public static void main(String[] args) throws ExecutionException, InterruptedException {
     GlobalRpcClient client = GlobalRpcClient.getTmpInstance();
     client.register(new PrintService(), "PrintService", "PrintService");
-    String str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL);
+    String str = client.locate("PrintService", "PrintService", 1, GlobalRpcClient.Scale.LOCAL).get();
 
 
     System.out.println("Locate test done with " + str );

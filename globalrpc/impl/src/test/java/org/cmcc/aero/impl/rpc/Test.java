@@ -17,6 +17,7 @@ import org.cmcc.aero.impl.rpc.server.GlobalRpcUtils;
 public class Test {
 
   public static void main(String [] args){
+
     PrintService service = new PrintService();
     String name = "zhuyuqing";
     Object [] paras = new Object[]{name};
