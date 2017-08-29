@@ -1,4 +1,4 @@
-module globalrpc {
+ module globalrpc {
     yang-version 1;
     namespace "urn:opendaylight:params:xml:ns:yang:globalrpc";
     prefix "globalrpc";

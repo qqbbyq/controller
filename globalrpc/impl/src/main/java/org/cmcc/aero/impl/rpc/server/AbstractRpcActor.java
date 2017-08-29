@@ -9,6 +9,8 @@
 package org.cmcc.aero.impl.rpc.server;
 
 import akka.actor.UntypedActor;
+import akka.cluster.Cluster;
+import akka.cluster.ClusterEvent;
 import akka.cluster.ClusterEvent.MemberEvent;
 import akka.cluster.ClusterEvent.MemberRemoved;
 import akka.cluster.ClusterEvent.MemberUp;
@@ -34,15 +36,22 @@ public abstract class AbstractRpcActor extends UntypedActor {
     }
   }
 
+  @Override
+  public void preStart() throws Exception {
+    super.preStart();
+    Cluster.get(getContext().system()).subscribe(getSelf(), ClusterEvent.initialStateAsEvents(),
+      MemberEvent.class, UnreachableMember.class);
+  }
+
   private boolean baseReceive(Object message) {
     if (message instanceof MemberUp) {
       LOG.info("Member is Up: {}", ((MemberUp) message).member());
       return true;
     } else if (message instanceof UnreachableMember) {
-      LOG.info("Member detected as unreachable: {}", ((UnreachableMember) message).member());
+      LOG.warn("Member detected as unreachable: {}", ((UnreachableMember) message).member());
       return true;
     } else if (message instanceof MemberRemoved) {
-      LOG.info("Member is Removed: {}", ((MemberRemoved) message).member());
+      LOG.warn("Member is Removed: {}", ((MemberRemoved) message).member());
       return true;
     } else if (message instanceof MemberEvent) {
       //ignore

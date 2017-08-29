@@ -563,7 +563,7 @@ public class OFFwdServiceImpl implements OFFwdService, GlobalRpcIntf {
 
     @Override
     public boolean isResourceLocal(Object resourceId) {
-        LOG.info("OFFwdServiceImpl.isResourceLocal is called");
+        LOG.debug("OFFwdServiceImpl.isResourceLocal is called");
         Preconditions.checkArgument(resourceId instanceof InstanceIdentifier, "Target resources should provide" +
                 "InstanceIdentifier Path");
         InstanceIdentifier<Node> nodeIdent = (InstanceIdentifier<Node>) resourceId;

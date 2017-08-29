@@ -14,7 +14,7 @@ import org.cmcc.aero.impl.rpc.server.GlobalRpcUtils;
  * Created by zhuyuqing on 2017/8/4.
  */
 
-public class Test {
+public class InvokeTest {
 
   public static void main(String [] args){
 

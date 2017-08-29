@@ -57,7 +57,8 @@ public class GlobalFlowRpcServiceImpl implements GlobalFlowRpcService {
     }
 
     private CompletableFuture<String> locateOFNode(InstanceIdentifier<Node> nodeIdent){
-        return  (CompletableFuture<String>) globalRpcClient.locate(delegateSvc.getServiceName(), delegateSvc.getServiceName(), nodeIdent,
+        return  (CompletableFuture<String>) globalRpcClient.locate(delegateSvc.getServiceName(),
+          delegateSvc.getServiceName(), nodeIdent,
                 GlobalRpcClient.Scale.CLUSTER);
     }
 

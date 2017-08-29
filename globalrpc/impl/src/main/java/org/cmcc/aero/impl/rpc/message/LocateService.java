@@ -8,7 +8,6 @@
 
 package org.cmcc.aero.impl.rpc.message;
 
-import akka.actor.Address;
 import org.cmcc.aero.impl.rpc.GlobalRpcClient;
 import org.cmcc.aero.impl.rpc.protocol.RemoteProtocol;
 
@@ -53,6 +52,32 @@ public class LocateService implements RemoteProtocol {
       "," +
       requestAddress +
       ")";
+  }
+
+  @Override
+  public int hashCode(){
+
+      int result = serviceName.hashCode();
+      result = 29 * result + serviceType.hashCode();
+      result = 30 * result + resourceId.hashCode();
+      result = 31 * result + scale.hashCode();
+      return result;
+
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if(this == other)                                      //先检查是否其自反性，后比较other是否为空。这样效率高
+      return true;
+    if(other == null || !(other instanceof LocateService))
+      return false;
+
+    final LocateService o = (LocateService) other;
+
+    return serviceName.equals(o.serviceName)
+      && serviceType.equals(o.serviceType)
+      && resourceId.equals(o.resourceId)
+      && scale.equals(o.scale);
   }
 
 

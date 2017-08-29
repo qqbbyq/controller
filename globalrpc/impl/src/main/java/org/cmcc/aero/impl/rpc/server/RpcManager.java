@@ -37,7 +37,9 @@ public class RpcManager extends AbstractRpcActor {
   private String shortPath; ///user/rpcManager
 
   @Override
-  public void preStart() {
+  public void preStart() throws Exception {
+    super.preStart();
+
     mediator = DistributedPubSub.get(getContext().system()).mediator();
     mediator.tell(new DistributedPubSubMediator.Put(self()), self());
 
@@ -58,14 +60,14 @@ public class RpcManager extends AbstractRpcActor {
   public void extendReceive(Object message) {
     if (message instanceof RegisterService) {
       RegisterService regt = (RegisterService) message;
-      LOG.info("{} got message: {}", selfName, regt);
+      LOG.debug("{} got message: {}", selfName, regt);
       String servKey =
           regt.serviceName + sept +
         regt.serviceType;
       getOrCreateService(servKey).forward(regt, context());
     } else if(message instanceof LocateService) {
       LocateService loct = (LocateService) message;
-      LOG.info("{} got message: {}", selfName, loct);
+      LOG.debug("{} got message: {}", selfName, loct);
 
       String key = loct.serviceName + sept + loct.serviceType;
       ActorRef service = getRpcService(key);
@@ -91,12 +93,12 @@ public class RpcManager extends AbstractRpcActor {
 
     } else if (message instanceof RpcTask) {
       RpcTask task = (RpcTask) message;
-      LOG.info("{} got message: {}", selfName, task);
+      LOG.debug("{} got message: {}", selfName, task);
 
       ActorRef worker = getRpcWorker(task.getTaskId());
       worker.forward(task, getContext());
     } else if (message instanceof DistributedPubSubMediator.SubscribeAck) {
-      LOG.info("{} got message: {}", selfName, message);
+      LOG.debug("{} got message: {}", selfName, message);
 
     } else if (message instanceof Terminated) {
       LOG.info("{} got message: {}, died actor: {}", selfName, message, ((Terminated) message).actor().path());

@@ -13,8 +13,6 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.group.types.rev131018.Group
 import org.opendaylight.yang.gen.v1.urn.opendaylight.meter.types.rev130918.Meter;
 import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**

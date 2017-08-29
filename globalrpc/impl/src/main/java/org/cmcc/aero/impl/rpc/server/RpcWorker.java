@@ -10,14 +10,12 @@ package org.cmcc.aero.impl.rpc.server;
 
 import akka.actor.*;
 import akka.cluster.Cluster;
-import akka.dispatch.OnComplete;
 import akka.japi.Procedure;
 import akka.util.Timeout;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.message.RpcTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 
 import java.util.concurrent.TimeUnit;
@@ -49,7 +47,7 @@ public class RpcWorker extends UntypedActor {
     public void apply(Object message) {
       if(message instanceof RpcTask) {
         RpcTask task = (RpcTask) message;
-        LOG.info("{} got message 19: {}", selfName, task);
+        LOG.debug("{} got message 19: {}", selfName, task);
 
         try {
           client = sender();
@@ -75,8 +73,7 @@ public class RpcWorker extends UntypedActor {
           getContext().become(waiting);
 
         } catch (Exception e) {
-          LOG.error("working RpcTask error {}", e.getMessage());
-          e.printStackTrace();
+          LOG.error("working RpcTask error {}", e);
           sender().tell( GlobalRpcResult.failure(
             100304L,
             "error send task to selection servicePath."
@@ -92,7 +89,7 @@ public class RpcWorker extends UntypedActor {
   private Procedure<Object> waiting = new Procedure<Object>() {
     @Override
     public void apply(Object message) {
-      LOG.info("{} waiting got message: {}", selfName, message);
+      LOG.debug("{} waiting got message: {}", selfName, message);
 
       if(message instanceof GlobalRpcResult) {
         GlobalRpcResult result = (GlobalRpcResult) message;
@@ -109,8 +106,8 @@ public class RpcWorker extends UntypedActor {
             100303L,
             "task has been submitted but not completed, please try again later to get the taskResult."
           ), ActorRef.noSender());
-      } else if(message instanceof GoToCompleting) {
-        getContext().become(completing);
+//      } else if(message instanceof GoToCompleting) {
+//        getContext().become(completing);
       } else {
         unhandled(message);
       }
@@ -143,6 +140,6 @@ public class RpcWorker extends UntypedActor {
 
   };
 
-  private static class GoToCompleting {}
+//  private static class GoToCompleting {}
 
 }

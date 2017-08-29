@@ -45,10 +45,10 @@ public class OFNodeMasterListener implements EntityOwnershipListener {
         String entityId = parseNodeId(entity);
         if (!ownershipChange.inJeopardy()) {
             if (ownershipChange.isOwner()) {
-                LOG.info("OFNodeMasterListener: This node might be owner of the {}", entity);
+                LOG.debug("OFNodeMasterListener: This node might be owner of the {}", entity);
                 localMastered.put(entityId, entity);
             } else {
-                LOG.info("OFNodeMasterListener: This node not owner of the {}", entityId);
+                LOG.debug("OFNodeMasterListener: This node not owner of the {}", entityId);
                 if (ownershipChange.wasOwner()) {
                     localMastered.remove(entityId);
                 }
@@ -65,7 +65,7 @@ public class OFNodeMasterListener implements EntityOwnershipListener {
 
     private String generateEntityId(InstanceIdentifier<Node> nodeIdent){
         String nodeId = nodeIdent.firstKeyOf(Node.class).getId().getValue();
-        LOG.info("OFNodeMasterListener.generateEntityId compute target nodeId is {}", nodeId);
+        LOG.debug("OFNodeMasterListener.generateEntityId compute target nodeId is {}", nodeId);
         return nodeId;
     }
 

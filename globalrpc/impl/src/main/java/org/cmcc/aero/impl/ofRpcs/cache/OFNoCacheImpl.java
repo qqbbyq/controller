@@ -14,8 +14,6 @@ import org.opendaylight.yangtools.yang.binding.InstanceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -30,32 +28,32 @@ public class OFNoCacheImpl implements OFStoreService {
 
     @Override
     public void batchRemoveFlows(InstanceIdentifier nodeId, List<String> removeFlowIds) {
-        LOG.info("OFNoCacheImpl.batchRemoveFlows is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.batchRemoveFlows is called, nothing to do.");
     }
 
     @Override
     public void addFlowEntry(InstanceIdentifier nodeIdent, Short tableId, String flowId, Flow flowInput) {
-        LOG.info("OFNoCacheImpl.addFlowEntry is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.addFlowEntry is called, nothing to do.");
     }
 
     @Override
     public void batchRemoveMeters(InstanceIdentifier targetNode, List<Long> removedMeterIds) {
-        LOG.info("OFNoCacheImpl.batchRemoveMeters is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.batchRemoveMeters is called, nothing to do.");
     }
 
     @Override
     public void addMeter(InstanceIdentifier nodeIdent, Long meterId, Meter meterInput) {
-        LOG.info("OFNoCacheImpl.addMeter is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.addMeter is called, nothing to do.");
     }
 
     @Override
     public void addGroup(InstanceIdentifier nodeIdent, Long groupId, Group groupInput) {
-        LOG.info("OFNoCacheImpl.addGroup is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.addGroup is called, nothing to do.");
     }
 
     @Override
     public void batchRemovceGroups(InstanceIdentifier targetNode, List<Long> removedGroupIds) {
-        LOG.info("OFNoCacheImpl.batchRemovceGroups is called, nothing to do.");
+        LOG.debug("OFNoCacheImpl.batchRemovceGroups is called, nothing to do.");
     }
 
     @Override

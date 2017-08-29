@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import org.cmcc.aero.impl.ofRpcs.api.GlobalFlowRpcService;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.*;
+import org.opendaylight.yang.gen.v1.urn.aero.yang.globalrpctest.rev170801.bulk.write.flows.input.TestNode;
 import org.opendaylight.yang.gen.v1.urn.ietf.params.xml.ns.yang.ietf.inet.types.rev130715.Ipv4Prefix;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.OutputActionCaseBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.action.types.rev131112.action.action.output.action._case.OutputActionBuilder;
@@ -31,11 +32,8 @@ import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instru
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.Instruction;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.InstructionBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.flow.types.rev131026.instruction.list.InstructionKey;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.AddFlowsBatchInputBuilder;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.flows.service.rev160314.add.flows.batch.input.BatchAddFlowsBuilder;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeConnectorId;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeId;
-import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.NodeRef;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.Nodes;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.Node;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.inventory.rev130819.nodes.NodeBuilder;
@@ -89,11 +87,38 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
 
     @Override
     public Future<RpcResult<BulkWriteFlowsOutput>> bulkWriteFlows(BulkWriteFlowsInput input) {
-        String nodeId = input.getNodeId();
-        Integer num = input.getNumber();
-        String flowStr = bulkLaunchFlowEntries(nodeId, num);
+        List<TestNode>
+          nodes = input.getTestNode();
+        int defaultNumber = input.getDefaultNumber();
+
+        Long startTime = System.currentTimeMillis();
+        for (TestNode node: nodes) {
+            Thread newThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        String flowStr;
+                        if(defaultNumber == 0) {
+                            flowStr = bulkLaunchFlowEntries(node.getNodeId(), node.getNumber());
+
+                        } else {
+                            flowStr = bulkLaunchFlowEntries(node.getNodeId(), defaultNumber);
+                        }
+                        LOG.info("BulkWrite nodeId:{} cost {} ms, with flowStr {}.",
+                          node.getNodeId(),
+                          (System.currentTimeMillis() - startTime),
+                          flowStr);
+
+                    } catch (Exception e) {
+                        LOG.error("BulkWrite error:{}", e);
+                    }
+                }
+            });
+            newThread.start();
+        }
+
         BulkWriteFlowsOutputBuilder outputBuilder = new BulkWriteFlowsOutputBuilder();
-        outputBuilder.setFlow(flowStr);
+        outputBuilder.setFlow("success" + System.currentTimeMillis());
         return RpcResultBuilder.success(outputBuilder.build()).buildFuture();
     }
 
@@ -158,7 +183,7 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
         long afterGenData = System.nanoTime();
         long genDataCost = TimeUnit.NANOSECONDS.toMicros(afterGenData - startGenData);
 
-        LOG.info("Generate openflow cfg: tableID-{}, IP_Start-{},priority-{},output:port-{}, dpids-{}", tableId,
+        LOG.debug("Generate openflow cfg: tableID-{}, IP_Start-{},priority-{},output:port-{}, dpids-{}", tableId,
                 basicIpStr, priority, outPort, dpid);
 
         long beforeWrite = System.nanoTime();
@@ -171,8 +196,8 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
                 this.getClass().getSimpleName(), genDataCost, writeDataCost);
     }
 
-    private String bulkLaunchFlowEntries(String ofNodeID, Integer number){
-        LOG.info("bulk Launch openflows on node {}.", ofNodeID);
+    public String bulkLaunchFlowEntries(String ofNodeID, Integer number){
+        LOG.debug("bulk Launch openflows on node {}.", ofNodeID);
         long startGenData = System.nanoTime();
 
         short[] tableIds = new short[number];
@@ -189,7 +214,7 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
             dstIps[i] = generateRandomIPStr() + "/32";
             outPorts[i] = generateRandomOfPort();
             priorities[i] = generateRandomPriority();
-            LOG.info("bulk Generate openflow cfg: tableID-{}, IP_Start-{},priority-{},output:port-{}, dpids-{}", tableIds[i],
+            LOG.debug("bulk Generate openflow cfg: tableID-{}, IP_Start-{},priority-{},output:port-{}, dpids-{}", tableIds[i],
               basicIpStr, priorities[i], outPorts[i], dpid);
 
         }
@@ -209,7 +234,7 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
         long afterWrite = System.nanoTime();
         long writeDataCost = TimeUnit.NANOSECONDS.toMicros(afterWrite - beforeWrite);
 
-        return String.format("%s bulk generate openflow data size %d,  cost %d us, bulk write openflow cost %d us",
+        return String.format("%s bulk generate openflow data size %d,  cost %d us, bulk write openflow cost %d us ",
           this.getClass().getSimpleName(), number, genDataCost, writeDataCost);
     }
 
@@ -372,10 +397,9 @@ public class GlobalrpctestServiceImpl implements GlobalrpctestService {
         Future<GlobalRpcResult> r = this.flowRpcService.addFlowsBatch(nodeBuilder.getId().getValue(), flows);
 
         try {
-            LOG.info("writeFlow res={}", r.get());
+            LOG.info("writeFlow  res={}", r.get());
         } catch (Exception e) {
-            LOG.error("writeFlow error", e.getMessage());
-            e.printStackTrace();
+            LOG.error("writeFlow error :{}", e);
         }
 
     }

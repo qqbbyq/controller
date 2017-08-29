@@ -28,12 +28,23 @@ module globalrpctest{
     }
 
       rpc bulk-write-flows {
+
             input {
-                leaf nodeId{
+
+                list test_node{
+                  key nodeId;
+
+                  leaf nodeId {
                     type string;
+                  }
+
+                  leaf number {
+                    type int32;
+                  }
+
                 }
 
-                leaf number{
+                leaf default_number{
                     type int32;
                 }
 
