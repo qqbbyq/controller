@@ -18,7 +18,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.cmcc.aero.impl.rpc.message.LocateService;
 import org.cmcc.aero.impl.rpc.message.RegisterService;
@@ -32,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.duration.Duration;
 
-import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
