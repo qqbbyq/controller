@@ -57,7 +57,7 @@ public class GlobalRpcClient {
 
       public CompletableFuture<String> load(LocateService key) throws ExecutionException {
         LOG.info(key + " load in cache");
-        LOG.info("already cache:{}", locateCache);
+//        LOG.info("already cache:{}", locateCache);
         CompletableFuture<String> future = PatternsCS.ask(
           rpcManager,
           new LocateService(key.serviceName, key.serviceType, key.resourceId, key.scale),
@@ -105,9 +105,6 @@ public class GlobalRpcClient {
 
   public java.util.concurrent.Future<String> locate(String serviceName, String serviceType, Object resourceId, Scale scale) {
     try {
-//      LocateService other = new LocateService(serviceName, serviceType, resourceId, scale) ;
-//      LocateService loct = new LocateService(serviceName, serviceType, resourceId, scale) ;
-//      LOG.info("isEqual={}, this={}, other={}", other.equals(loct), loct, other);
       return locateCache.get(new LocateService(serviceName, serviceType, resourceId, scale));
     } catch (Exception e) {
       LOG.error("locate service error: {}", e);

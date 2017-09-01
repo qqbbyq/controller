@@ -10,16 +10,17 @@ package org.cmcc.aero.impl.rpc.message;
 
 import org.cmcc.aero.impl.rpc.protocol.Event;
 import org.cmcc.aero.impl.rpc.protocol.RemoteProtocol;
+import org.cmcc.aero.impl.rpc.protocol.TaskProtocol;
 
 /**
  * Created by zhuyuqing on 2017/8/1.
  */
 
-public class RpcTask implements RemoteProtocol, Event {
+public class RpcTask  extends TaskProtocol implements RemoteProtocol, Event {
 
   private static final long serialVersionUID = 1L;
 
-  private String taskId;
+  public String taskId;
 
   private String servicePath;
 

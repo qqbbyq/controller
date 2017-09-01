@@ -60,28 +60,28 @@ public class RpcManager extends AbstractRpcActor {
   public void extendReceive(Object message) {
     if (message instanceof RegisterService) {
       RegisterService regt = (RegisterService) message;
-      LOG.debug("{} got message: {}", selfName, regt);
+      LOG.info("{} got message: {}", selfName, regt);
       String servKey =
           regt.serviceName + sept +
         regt.serviceType;
       getOrCreateService(servKey).forward(regt, context());
     } else if(message instanceof LocateService) {
       LocateService loct = (LocateService) message;
-      LOG.debug("{} got message: {}", selfName, loct);
+      LOG.info("{} got message: {}", selfName, loct);
 
       String key = loct.serviceName + sept + loct.serviceType;
       ActorRef service = getRpcService(key);
 
 
       if (service != null) {
-        LOG.debug("{} service ifLocal: {}", selfName, service.isTerminated());
+        LOG.info("{} service ifLocal: {}", selfName, service.isTerminated());
         service.forward(loct, context());
       } else if (loct.scale.equals(Scale.LOCAL)) {
-        LOG.debug("{} service local not found.", selfName);
+        LOG.info("{} service local not found.", selfName);
         sender().tell("", ActorRef.noSender());
       }
 
-      LOG.debug("{} service continue.", selfName);
+      LOG.info("{} service continue.", selfName);
 
       if (loct.requestAddress == null && loct.scale.equals(Scale.CLUSTER)) {
         LOG.debug("{} service ready to send to mediator: {}", selfName, mediator);

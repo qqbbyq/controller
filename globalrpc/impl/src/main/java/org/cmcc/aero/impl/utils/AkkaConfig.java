@@ -34,5 +34,4 @@ public class AkkaConfig {
     return oldConfig.withFallback(newConfig);
   }
 
-
 }

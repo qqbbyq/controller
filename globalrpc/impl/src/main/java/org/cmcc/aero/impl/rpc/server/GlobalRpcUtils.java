@@ -14,7 +14,9 @@ import com.google.common.cache.LoadingCache;
 import org.cmcc.aero.impl.rpc.GlobalRpcIntf;
 import org.cmcc.aero.impl.rpc.message.GlobalRpcResult;
 import org.opendaylight.controller.cluster.datastore.node.utils.serialization.NormalizedNodeSerializer;
+import org.opendaylight.controller.cluster.datastore.util.InstanceIdentifierUtils;
 import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
+import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,8 +99,8 @@ public class GlobalRpcUtils {
   public static GlobalRpcResult invoke(GlobalRpcIntf rpcSvc, String methodName, Object[] parameters) {
     try {
       parameters = fromSerialized(parameters);
-      LOG.debug("invoke service: {}", rpcSvc.getClass().toString());
-      LOG.debug("invoke method: {}", methodName);
+      LOG.info("invoke service: {}", rpcSvc.getClass().toString());
+      LOG.info("invoke method: {}", methodName);
 
       Class<?>[] parameterTypes = new Class[parameters.length];
       for(int i = 0 ; i < parameters.length; ++i) {
@@ -107,6 +109,7 @@ public class GlobalRpcUtils {
         LOG.debug("invoke prameterTypes: {}", parameterTypes[i]);
       }
       Method method = methodCache.get(new MethodKey(rpcSvc.getClass(), methodName, parameterTypes));
+      long start = System.currentTimeMillis();
       Object res = method.invoke(rpcSvc, parameters);
       GlobalRpcResult r;
       if(res instanceof java.util.concurrent.Future) {
@@ -123,7 +126,8 @@ public class GlobalRpcUtils {
       }  else {
         r = GlobalRpcResult.success(res);
       }
-      LOG.info("invoke service={}, method={}, parameter.length={}, result={}", rpcSvc, methodName, parameters.length, r);
+      long cost = System.currentTimeMillis() - start;
+      LOG.info("invoke service={}, method={}, result={}, cost={}ms", rpcSvc, methodName, r, cost);
       return r;
 
     } catch (Exception e) {
@@ -131,6 +135,7 @@ public class GlobalRpcUtils {
         rpcSvc.getClass(),
         methodName,
         e);
+      e.printStackTrace();
       return GlobalRpcResult.failure(100200L, e.getMessage());
     }
   }
@@ -163,6 +168,8 @@ public class GlobalRpcUtils {
     for(Object parameter: parameters) {
       if(parameter instanceof NormalizedNode) {
         serialParas.add(NormalizedNodeSerializer.serialize((NormalizedNode) parameter));
+      } else if (parameter instanceof YangInstanceIdentifier){
+        serialParas.add(InstanceIdentifierUtils.toSerializable((YangInstanceIdentifier)parameter));
       } else {
         serialParas.add(parameter);
       }
@@ -171,14 +178,22 @@ public class GlobalRpcUtils {
   }
 
   private static Object[] fromSerialized(Object[] parameters) {
-    List<Object> paras = new ArrayList<>();
-    for(Object parameter: parameters)
-    if(parameter instanceof NormalizedNodeMessages.Node) {
-      paras.add(NormalizedNodeSerializer.deSerialize((NormalizedNodeMessages.Node) parameter));
-    } else {
-      paras.add(parameter);
+    try {
+      List<Object> paras = new ArrayList<>();
+      for(Object parameter: parameters)
+        if(parameter instanceof NormalizedNodeMessages.Node) {
+          paras.add(NormalizedNodeSerializer.deSerialize((NormalizedNodeMessages.Node) parameter));
+        } else if(parameter instanceof NormalizedNodeMessages.InstanceIdentifier) {
+          paras.add(InstanceIdentifierUtils.fromSerializable((NormalizedNodeMessages.InstanceIdentifier)parameter));
+        } else {
+          paras.add(parameter);
+        }
+      return paras.toArray();
+    } catch (Exception e) {
+      LOG.error("fromSerialized error: {}", e);
+      return null;
     }
-    return paras.toArray();
+
   }
 
 }

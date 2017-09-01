@@ -8,9 +8,7 @@
 
 package org.cmcc.aero.impl.rpc.server;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSelection;
-import akka.actor.Address;
+import akka.actor.*;
 import akka.cluster.Cluster;
 import akka.persistence.SnapshotOffer;
 import akka.persistence.UntypedPersistentActor;
@@ -18,14 +16,22 @@ import org.cmcc.aero.impl.rpc.GlobalRpcClient;
 import org.cmcc.aero.impl.rpc.GlobalRpcIntf;
 import org.cmcc.aero.impl.rpc.message.*;
 import org.cmcc.aero.impl.rpc.protocol.Event;
+import org.cmcc.aero.impl.rpc.protocol.TaskProtocol;
+import org.opendaylight.controller.protobuff.messages.common.NormalizedNodeMessages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by zhuyuqing on 2017/8/7.
  */
 
-public class RpcServiceActor extends UntypedPersistentActor {
+public class RpcServiceActor extends UntypedActor {
 
   private Logger LOG = LoggerFactory.getLogger(this.getClass());
 
@@ -33,8 +39,6 @@ public class RpcServiceActor extends UntypedPersistentActor {
 
   private String selfPath;
   private String selfName;
-
-  private RpcServiceState state = new RpcServiceState();
 
   @Override
   public void preStart() throws Exception {
@@ -47,40 +51,16 @@ public class RpcServiceActor extends UntypedPersistentActor {
   }
 
   @Override
-  public void onReceiveRecover(Object message) throws Exception {
-    LOG.info("initial got message: {}", message);
-
-    if(message instanceof RpcTask) {
-      state.offer((Event) message);
-    } else if (message instanceof RpcTaskCompleted) {
-      state.poll(((Event) message).getTaskId());
-    } else if (message instanceof SnapshotOffer) {
-      state = (RpcServiceState) ((SnapshotOffer) message).snapshot();
-    }
-  }
-
-
-  @Override
-  public void onReceiveCommand(Object message) throws Exception {
+  public void onReceive(Object message) throws Exception {
     if (message instanceof RegisterService) {
       RegisterService regt = (RegisterService) message;
       LOG.debug("{} got message: {}", selfName, regt);
       if(service == null && regt.service != null) {
         service = regt.service;
-        LOG.debug("initial State:{}", state.toString());
-        while(state.getEvents().peek() != null) {
-          RpcTask task = (RpcTask) state.getEvents().peek();
-          GlobalRpcResult r = GlobalRpcUtils.invoke(service, task.getMethodName(), task.getParameters());
-          persist(new RpcTaskCompleted(task.getTaskId()), this::handleRpcTaskEvent);
-          ActorSelection select = getContext().actorSelection(task.getClientPath());
-          select.tell(r, ActorRef.noSender());
-        }
       } else if(service != regt.service) {
         throw new Exception("Error : You have registered unequal service with same serviceType " + service.getServiceType());
       }
 
-      //TODO add reply to client if needed
-//        sender().tell(GlobalRpcResult.success(), ActorRef.noSender());
     } else if (message instanceof LocateService) {
       LocateService loct = (LocateService) message;
       LOG.debug("{} got message: {}", selfName, loct);
@@ -93,44 +73,40 @@ public class RpcServiceActor extends UntypedPersistentActor {
       } else {
         LOG.debug("{} situation that isResourceLocal=false", selfName);
       }
-    } else if (message instanceof RpcTask) {
-      RpcTask task = (RpcTask) message;
-      //TODO hasn't verify if client path correct
-      task.updateClientPath(sender().path().toString());
-      LOG.debug("{} got message: {}", selfName, task);
+    } else if(message instanceof RpcTaskHead) {
+      RpcTaskHead task = (RpcTaskHead) message;
+      LOG.info("got message : TaskProtocol {}", task.taskId);
+      getInvoker(task.taskId).forward(message, getContext());
 
-      persist((Event)message, this::handleRpcTaskEvent);
+    } else if(message instanceof RpcTaskChunk) {
+      RpcTaskChunk task = (RpcTaskChunk) message;
+      LOG.info("got message : TaskProtocol {}", task.taskId);
+      getInvoker(task.taskId).forward(message, getContext());
 
-      if (service != null) {
-        GlobalRpcResult r = GlobalRpcUtils.invoke(service, task.getMethodName(), task.getParameters());
-        sender().tell(r, ActorRef.noSender());
-      } else {
-        sender().tell(GlobalRpcResult.failure(100302L, "target service is null, it shouldn't happen"), ActorRef.noSender());
-      }
-//      self().tell(new RpcTaskCompleted(task.getTaskId()), self());
-      persist(new RpcTaskCompleted(task.getTaskId()), this::handleRpcTaskEvent);
-
-    } else if (message instanceof RpcTaskCompleted) {
-      LOG.info("{} got message: {}", selfName, message);
     }
   }
 
-  private int snapShotInterval = 500;
-
-  private void handleRpcTaskEvent(Event event) throws Exception {
-    if(event instanceof RpcTask)
-      state.offer(event);
-    else if(event instanceof RpcTaskCompleted)
-      state.poll(event.getTaskId());
-
-    LOG.debug("handleEvent {} done, and state={}", event, state.copy().toString());
-    if(lastSequenceNr() % snapShotInterval == 0 && lastSequenceNr() !=0) {
-      saveSnapshot(state.copy());
+  private ActorRef getInvoker(String taskId) {
+    String name = "invoker-" + taskId;
+    ActorRef invoker = getContext().getChild(name);
+    if (invoker == null) {
+      invoker = getContext().actorOf(Props.create(Invoker.class, service), name);
+      getContext().watch(invoker);
     }
+    return invoker;
   }
 
-  @Override
-  public String persistenceId() {
-    return "rpc-service-persistence-id";
-  }
+
+//  static class InvokeTask{
+//    public GlobalRpcIntf service;
+//    public String methodName;
+//    public Object[] parameters;
+//
+//    public InvokeTask(GlobalRpcIntf service, String methodName, Object[] parameters) {
+//      this.service = service;
+//      this.methodName = methodName;
+//      this.parameters = parameters;
+//    }
+//  }
+
 }
